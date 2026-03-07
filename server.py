@@ -595,10 +595,10 @@ function Sidebar() {
       </nav>
       <div className="sidebar-footer">
         <div className="user-card">
-          <div className="user-avatar">{user?.name?.charAt(0).toUpperCase()}</div>
+          <div className="user-avatar">{(user?.name||user?.email||'U').charAt(0).toUpperCase()}</div>
           <div style={{flex:1,minWidth:0}}>
-            <div className="user-name">{user?.name}</div>
-            <div className="user-email">{user?.email}</div>
+            <div className="user-name">{user?.name||'User'}</div>
+            <div className="user-email" title={user?.email}>{user?.email||'—'}</div>
           </div>
         </div>
         <div className="nav-item" onClick={()=>{ logout(); navigate('/login'); }} style={{color:'var(--red)',marginTop:2}}>
@@ -829,10 +829,11 @@ function Dashboard() {
     return () => clearInterval(id);
   }, [fetchStats]);
 
+  const loaded = stats != null && typeof stats === 'object' && 'total_connections' in stats;
   const STAT_CARDS = [
     {
       label:'Server Connections',
-      val: stats?.total_connections ?? null,
+      val: loaded ? (stats.total_connections ?? 0) : null,
       sub:'FTP & SFTP servers',
       link:'/connections',
       color:'var(--primary)',
@@ -842,7 +843,7 @@ function Dashboard() {
     },
     {
       label:'Active API Keys',
-      val: stats ? `${stats.active_api_keys}/${stats.total_api_keys}` : null,
+      val: loaded ? `${stats.active_api_keys ?? 0} / ${stats.total_api_keys ?? 0}` : null,
       sub:'Programmatic access keys',
       link:'/api-keys',
       color:'var(--green)',
@@ -852,7 +853,7 @@ function Dashboard() {
     },
     {
       label:'Operations Today',
-      val: stats?.operations_today ?? null,
+      val: loaded ? (stats.operations_today ?? 0) : null,
       sub:'File ops in last 24h',
       link:'/browser',
       color:'var(--amber)',
@@ -894,7 +895,7 @@ function Dashboard() {
                 <Icon size={18}/>
               </div>
               <div className="stat-label">{s.label}</div>
-              {s.val===null ? (
+              {s.val==null ? (
                 <><SkeletonLine w="60%" h={30} mb={4}/><SkeletonLine w="80%" h={12}/></>
               ) : (
                 <>
@@ -920,7 +921,7 @@ function Dashboard() {
             View all <I.ArrowRight size={11}/>
           </button>
         </div>
-        {!stats ? (
+        {!loaded ? (
           <div style={{display:'flex',flexDirection:'column',gap:10}}>
             {[1,2,3,4].map(i=>(
               <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'8px 4px'}}>
@@ -930,9 +931,9 @@ function Dashboard() {
               </div>
             ))}
           </div>
-        ) : stats.recent_activities?.length > 0 ? (
+        ) : (stats.recent_activities||[]).length > 0 ? (
           <div>
-            {stats.recent_activities.map(a=>{
+            {(stats.recent_activities||[]).map(a=>{
               const iconKey = ACTION_ICONS[a.action] || 'Activity';
               const AIcon   = I[iconKey];
               const ok      = a.status==='success';
@@ -991,14 +992,17 @@ function Connections() {
   const openEdit = c=>{ setForm({name:c.name,protocol:c.protocol,host:c.host,port:c.port,username:c.username,password:'',private_key:''}); setModal(c); };
   const F = (k,v) => setForm(f=>({...f,[k]:v}));
 
-  const save = async e => {
-    e.preventDefault(); setSaving(true);
-    const d={...form}; if(!d.password) delete d.password; if(!d.private_key) delete d.private_key;
+  const save = async () => {
+    if (!form.name || !form.host || !form.username) { toast.error('Name, host and username are required'); return; }
+    setSaving(true);
+    const d={...form,port:parseInt(form.port)||22};
+    if(!d.password) delete d.password;
+    if(!d.private_key) delete d.private_key;
     try {
-      if(modal==='new'){ await api.post('/connections',d); toast.success('Connection created'); }
-      else { await api.put(`/connections/${modal.id}`,d); toast.success('Connection updated'); }
-      setModal(null); load();
-    } catch(err){ toast.error(err.message||'Failed to save'); }
+      if(modal==='new'){ await api.post('/connections',d); toast.success('Connection created!'); }
+      else { await api.put(`/connections/${modal.id}`,d); toast.success('Connection updated!'); }
+      setModal(null); await load();
+    } catch(err){ toast.error(err.message||'Failed to save — check your details'); }
     finally{ setSaving(false); }
   };
   const del = async id=>{
@@ -1136,7 +1140,7 @@ function Connections() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button>
-                <button className="btn btn-primary" onClick={save} disabled={saving}>
+                <button className="btn btn-primary" onClick={()=>save()} disabled={saving}>
                   {saving?<Spinner/>:<I.Check size={13}/>} {modal==='new'?'Create Connection':'Save Changes'}
                 </button>
               </div>
