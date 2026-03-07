@@ -329,9 +329,9 @@ code{background:rgba(99,102,241,0.1);padding:1px 6px;border-radius:5px;font-fami
 <div id="toast-root"></div>
 <div id="root"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.5/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
   window.addEventListener('load', function() {
     setTimeout(function() {
@@ -805,6 +805,7 @@ const ACTION_ICONS = {
 
 function Dashboard() {
   const [stats,       setStats]      = useState(null);
+  const [loadingStats,setLoadingStats]= useState(true);
   const [lastRefresh, setLastRefresh]= useState(null);
   const [refreshing,  setRefreshing] = useState(false);
   const { navigate }                 = useRouter();
@@ -813,54 +814,34 @@ function Dashboard() {
     if (!silent) setRefreshing(true);
     try {
       const s = await api.get('/dashboard/stats');
-      setStats(s);
+      // Robustly accept response regardless of shape
+      setStats(s && typeof s === 'object' ? s : {});
       setLastRefresh(new Date());
     } catch(e) {
       if (!silent) toast.error('Failed to load stats');
+      setStats({});
     } finally {
       setRefreshing(false);
+      setLoadingStats(false);
     }
   }, []);
 
   useEffect(() => {
     fetchStats();
-    // Real-time polling every 30 seconds
     const id = setInterval(() => fetchStats(true), 30000);
     return () => clearInterval(id);
   }, [fetchStats]);
 
-  const loaded = stats != null && typeof stats === 'object' && 'total_connections' in stats;
+  const tc  = stats?.total_connections  ?? 0;
+  const ak  = stats?.active_api_keys    ?? 0;
+  const tk  = stats?.total_api_keys     ?? 0;
+  const ops = stats?.operations_today   ?? 0;
+  const acts = Array.isArray(stats?.recent_activities) ? stats.recent_activities : [];
+
   const STAT_CARDS = [
-    {
-      label:'Server Connections',
-      val: loaded ? (stats.total_connections ?? 0) : null,
-      sub:'FTP & SFTP servers',
-      link:'/connections',
-      color:'var(--primary)',
-      bgColor:'var(--primary-bg)',
-      borderColor:'var(--primary-border)',
-      icon:'Server',
-    },
-    {
-      label:'Active API Keys',
-      val: loaded ? `${stats.active_api_keys ?? 0} / ${stats.total_api_keys ?? 0}` : null,
-      sub:'Programmatic access keys',
-      link:'/api-keys',
-      color:'var(--green)',
-      bgColor:'var(--green-bg)',
-      borderColor:'var(--green-border)',
-      icon:'Key',
-    },
-    {
-      label:'Operations Today',
-      val: loaded ? (stats.operations_today ?? 0) : null,
-      sub:'File ops in last 24h',
-      link:'/browser',
-      color:'var(--amber)',
-      bgColor:'var(--amber-bg)',
-      borderColor:'var(--amber-border)',
-      icon:'Activity',
-    },
+    { label:'Server Connections', val:tc,          sub:'FTP & SFTP servers',         link:'/connections', color:'var(--primary)', bgColor:'var(--primary-bg)', borderColor:'var(--primary-border)', icon:'Server'   },
+    { label:'Active API Keys',    val:`${ak} / ${tk}`, sub:'Programmatic access keys',link:'/api-keys',   color:'var(--green)',   bgColor:'var(--green-bg)',   borderColor:'var(--green-border)',   icon:'Key'      },
+    { label:'Operations Today',   val:ops,          sub:'File ops in last 24h',       link:'/browser',    color:'var(--amber)',   bgColor:'var(--amber-bg)',   borderColor:'var(--amber-border)',   icon:'Activity' },
   ];
 
   return (
@@ -879,7 +860,6 @@ function Dashboard() {
           )}
           <button className="btn btn-secondary btn-sm" onClick={()=>fetchStats()} disabled={refreshing} title="Refresh">
             {refreshing ? <Spinner size={12}/> : <I.Refresh size={13}/>}
-            {!refreshing && <span style={{display:'none'}}>Refresh</span>}
           </button>
           <button className="btn btn-primary btn-sm" onClick={()=>navigate('/connections')}><I.Plus size={13}/> Add Connection</button>
         </div>
@@ -895,7 +875,7 @@ function Dashboard() {
                 <Icon size={18}/>
               </div>
               <div className="stat-label">{s.label}</div>
-              {s.val==null ? (
+              {loadingStats ? (
                 <><SkeletonLine w="60%" h={30} mb={4}/><SkeletonLine w="80%" h={12}/></>
               ) : (
                 <>
@@ -921,7 +901,7 @@ function Dashboard() {
             View all <I.ArrowRight size={11}/>
           </button>
         </div>
-        {!loaded ? (
+        {loadingStats ? (
           <div style={{display:'flex',flexDirection:'column',gap:10}}>
             {[1,2,3,4].map(i=>(
               <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'8px 4px'}}>
@@ -931,12 +911,12 @@ function Dashboard() {
               </div>
             ))}
           </div>
-        ) : (stats.recent_activities||[]).length > 0 ? (
+        ) : acts.length > 0 ? (
           <div>
-            {(stats.recent_activities||[]).map(a=>{
+            {acts.map(a=>{
               const iconKey = ACTION_ICONS[a.action] || 'Activity';
               const AIcon   = I[iconKey];
-              const ok      = a.status==='success';
+              const ok      = a.status === 'success';
               return (
                 <div key={a.id} className="activity-row">
                   <div style={{width:32,height:32,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,
