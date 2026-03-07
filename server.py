@@ -5,122 +5,280 @@ No MongoDB. No Node. No build step. Just Python.
 """
 
 # ─────────────────────────────────────────────────────────
-# EMBEDDED FRONTEND (served at every non-/api path)
+# EMBEDDED FRONTEND
 # ─────────────────────────────────────────────────────────
 HTML = r"""<!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Relay Drive</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = {
-  darkMode: 'class',
-  theme: {
-    extend: {
-      colors: {
-        background: 'hsl(240,10%,4%)',
-        foreground: 'hsl(0,0%,98%)',
-        card: 'hsl(240,10%,7%)',
-        border: 'hsl(240,5%,16%)',
-        primary: { DEFAULT:'hsl(258,89%,66%)', foreground:'hsl(0,0%,100%)' },
-        secondary: { DEFAULT:'hsl(240,5%,14%)', foreground:'hsl(0,0%,98%)' },
-        muted: { DEFAULT:'hsl(240,5%,14%)', foreground:'hsl(240,5%,55%)' },
-        destructive: { DEFAULT:'hsl(0,63%,47%)', foreground:'hsl(0,0%,98%)' },
-        input: 'hsl(240,5%,16%)',
-        ring: 'hsl(258,89%,66%)',
-      }
-    }
-  }
-};
-</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>"/>
 <style>
-*, *::before, *::after { box-sizing: border-box; }
-body { background: hsl(240,10%,4%); color: hsl(0,0%,98%); font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; margin:0; }
-:root {
-  --bg: hsl(240,10%,4%);
-  --card: hsl(240,10%,7%);
-  --border: hsl(240,5%,16%);
-  --muted: hsl(240,5%,55%);
-  --primary: hsl(258,89%,66%);
-  --secondary: hsl(240,5%,14%);
-  --destructive: hsl(0,63%,47%);
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:         #07070f;
+  --surface:    #0e0e1a;
+  --surface2:   #141428;
+  --border:     rgba(255,255,255,0.07);
+  --border2:    rgba(255,255,255,0.12);
+  --text:       #f0f0ff;
+  --muted:      #6b6b8a;
+  --muted2:     #9898b8;
+  --primary:    #7c5cfc;
+  --primary2:   #9b82ff;
+  --primary-bg: rgba(124,92,252,0.12);
+  --primary-border: rgba(124,92,252,0.35);
+  --green:      #22c55e;
+  --green-bg:   rgba(34,197,94,0.12);
+  --green-border:rgba(34,197,94,0.3);
+  --red:        #ef4444;
+  --red-bg:     rgba(239,68,68,0.12);
+  --red-border: rgba(239,68,68,0.3);
+  --amber:      #f59e0b;
+  --amber-bg:   rgba(245,158,11,0.12);
+  --amber-border:rgba(245,158,11,0.3);
+  --blue:       #3b82f6;
+  --blue-bg:    rgba(59,130,246,0.12);
+  --blue-border:rgba(59,130,246,0.3);
+  --sidebar-w:  260px;
+  --radius:     12px;
+  --radius-lg:  16px;
 }
-.grid-bg {
-  background-image: linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: 40px 40px;
-  background-color: var(--bg);
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+::selection{background:rgba(124,92,252,0.3)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.18)}
+
+/* ── Layout ── */
+.app-shell{display:flex;min-height:100vh}
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;height:100vh;z-index:40;
+  padding:0 12px;
 }
-.bento-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  transition: border-color 0.3s, box-shadow 0.3s;
+.main-content{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.page-body{max-width:1100px;width:100%;margin:0 auto;padding:32px 24px}
+
+/* ── Sidebar ── */
+.sidebar-logo{display:flex;align-items:center;gap:12px;padding:22px 8px 18px}
+.logo-icon{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,var(--primary),#5b3fd4);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(124,92,252,0.35);
+  flex-shrink:0;
 }
-.bento-card:hover { border-color: rgba(124,58,237,0.3); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
-.nav-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 16px; border-radius: 8px;
-  color: var(--muted); text-decoration: none; font-weight: 500;
-  transition: background 0.2s, color 0.2s; cursor: pointer;
+.logo-text{font-size:16px;font-weight:700;letter-spacing:-0.3px}
+.logo-sub{font-size:10px;color:var(--muted);letter-spacing:0.3px;margin-top:1px}
+.sidebar-nav{display:flex;flex-direction:column;gap:2px;flex:1;padding-bottom:12px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:10px;
+  color:var(--muted2);font-weight:500;font-size:13px;
+  cursor:pointer;transition:all 0.15s;text-decoration:none;
+  border:1px solid transparent;
 }
-.nav-item:hover { background: var(--secondary); color: hsl(0,0%,98%); }
-.nav-item.active { background: var(--secondary); color: hsl(0,0%,98%); }
-.file-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
-  cursor: pointer; transition: background 0.15s;
+.nav-item:hover{background:var(--surface2);color:var(--text);border-color:var(--border)}
+.nav-item.active{
+  background:var(--primary-bg);color:var(--primary2);
+  border-color:var(--primary-border);
 }
-.file-row:hover { background: rgba(255,255,255,0.04); }
-.badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:9999px; font-size:11px; font-weight:600; border:1px solid; }
-.badge-green { background:rgba(16,185,129,0.15); color:#34d399; border-color:rgba(16,185,129,0.3); }
-.badge-red   { background:rgba(239,68,68,0.15);  color:#f87171; border-color:rgba(239,68,68,0.3); }
-.badge-amber { background:rgba(245,158,11,0.15); color:#fbbf24; border-color:rgba(245,158,11,0.3); }
-.badge-blue  { background:rgba(99,102,241,0.15); color:#a5b4fc; border-color:rgba(99,102,241,0.3); }
-.badge-purple{ background:rgba(124,58,237,0.15); color:#c4b5fd; border-color:rgba(124,58,237,0.3); }
-.code-block  { background:var(--secondary); border:1px solid var(--border); border-radius:8px; padding:16px; font-family:monospace; font-size:12px; overflow-x:auto; white-space:pre; }
-.proto-sftp  { background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); padding:1px 8px; border-radius:4px; font-size:11px; font-family:monospace; text-transform:uppercase; }
-.proto-ftp   { background:rgba(245,158,11,0.15);  color:#fbbf24; border:1px solid rgba(245,158,11,0.3); padding:1px 8px; border-radius:4px; font-size:11px; font-family:monospace; text-transform:uppercase; }
-/* Inputs */
-input, textarea, select {
-  background: var(--secondary); border: 1px solid var(--border); color: hsl(0,0%,98%);
-  border-radius: 8px; padding: 8px 12px; width: 100%; font-size: 14px; outline: none;
+.nav-item svg{opacity:0.7;flex-shrink:0}
+.nav-item.active svg{opacity:1}
+.sidebar-footer{border-top:1px solid var(--border);padding:14px 4px}
+.user-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;margin-bottom:4px}
+.user-avatar{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--primary),#5b3fd4);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:13px;flex-shrink:0;
+  color:#fff;
 }
-input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(124,58,237,0.2); }
-label { font-size:13px; font-weight:500; color:var(--muted); margin-bottom:4px; display:block; }
-/* Buttons */
-.btn { display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer; border:none; transition:opacity 0.2s,background 0.2s; }
-.btn:disabled { opacity:0.5; cursor:not-allowed; }
-.btn-primary   { background:var(--primary); color:#fff; }
-.btn-primary:hover:not(:disabled)   { opacity:0.9; }
-.btn-secondary { background:var(--secondary); color:hsl(0,0%,98%); border:1px solid var(--border); }
-.btn-secondary:hover:not(:disabled) { background:hsl(240,5%,20%); }
-.btn-ghost     { background:transparent; color:var(--muted); }
-.btn-ghost:hover:not(:disabled)     { background:var(--secondary); color:hsl(0,0%,98%); }
-.btn-danger    { background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); }
-.btn-danger:hover:not(:disabled)    { background:rgba(239,68,68,0.25); }
-.btn-sm  { padding:5px 10px; font-size:12px; }
-.btn-icon{ padding:6px; border-radius:8px; }
-/* Modal */
-.modal-bg    { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; display:flex; align-items:center; justify-content:center; padding:16px; }
-.modal-box   { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
-.modal-title { font-size:18px; font-weight:700; margin-bottom:4px; }
-.modal-desc  { font-size:13px; color:var(--muted); margin-bottom:20px; }
-/* Toast */
-#toast-root { position:fixed; top:16px; right:16px; z-index:999; display:flex; flex-direction:column; gap:8px; }
-.toast { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 16px; font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; min-width:240px; box-shadow:0 8px 24px rgba(0,0,0,0.4); animation:slideIn 0.2s ease; }
-@keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
-.toast.success { border-color:rgba(16,185,129,0.4); }
-.toast.error   { border-color:rgba(239,68,68,0.4); }
-/* Spinner */
-.spin { animation: spin 0.8s linear infinite; display:inline-block; }
-@keyframes spin { to { transform: rotate(360deg); } }
-/* Scrollbar */
-::-webkit-scrollbar { width:6px; height:6px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+.user-name{font-size:13px;font-weight:600;line-height:1.2}
+.user-email{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+.nav-divider{height:1px;background:var(--border);margin:8px 4px}
+
+/* ── Mobile ── */
+.mobile-header{display:none;position:sticky;top:0;z-index:30;
+  background:rgba(14,14,26,0.85);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:12px 16px;align-items:center;justify-content:space-between}
+.mobile-menu-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:50;backdrop-filter:blur(4px)}
+.mobile-menu{position:fixed;top:0;left:0;width:280px;height:100%;background:var(--surface);z-index:51;padding:20px 12px;overflow-y:auto;transform:translateX(-100%);transition:transform 0.25s ease}
+.mobile-menu.open{transform:translateX(0)}
+
+/* ── Page grids ── */
+.grid-bg{
+  background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(124,92,252,0.12),transparent);
+}
+.page-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px;flex-wrap:wrap}
+.page-title{font-size:24px;font-weight:700;letter-spacing:-0.5px}
+.page-sub{font-size:13px;color:var(--muted);margin-top:2px}
+
+/* ── Cards ── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.card:hover{border-color:var(--border2)}
+.card-p{padding:22px}
+.card-glow{box-shadow:0 0 0 1px var(--primary-border),0 8px 32px rgba(124,92,252,0.08)}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;transition:all 0.2s;cursor:default}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+.stat-num{font-size:32px;font-weight:800;letter-spacing:-1px;margin:8px 0 4px;background:linear-gradient(135deg,var(--text),var(--muted2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px}
+.stat-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.stat-link{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--primary);margin-top:14px;cursor:pointer;font-weight:500}
+.stat-link:hover{color:var(--primary2)}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;white-space:nowrap;letter-spacing:0.1px}
+.btn:disabled{opacity:0.45;cursor:not-allowed;pointer-events:none}
+.btn-primary{background:linear-gradient(135deg,var(--primary),#5b3fd4);color:#fff;box-shadow:0 2px 12px rgba(124,92,252,0.3)}
+.btn-primary:hover{box-shadow:0 4px 20px rgba(124,92,252,0.45);transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+.btn-secondary:hover{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.18)}
+.btn-ghost{background:transparent;color:var(--muted2)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.btn-danger:hover{background:rgba(239,68,68,0.2)}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:8px}
+.btn-icon{padding:7px;border-radius:8px}
+.btn-xs{padding:3px 8px;font-size:11px;border-radius:6px}
+
+/* ── Form ── */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px}
+.input{
+  width:100%;background:var(--surface2);
+  border:1px solid var(--border2);
+  color:var(--text);border-radius:10px;
+  padding:9px 13px;font-size:13px;outline:none;
+  transition:border-color 0.15s,box-shadow 0.15s;
+  font-family:inherit;
+}
+.input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(124,92,252,0.15)}
+.input::placeholder{color:var(--muted)}
+textarea.input{resize:vertical;min-height:80px}
+select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6b8a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;border:1px solid;letter-spacing:0.2px}
+.badge-green{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+.badge-red{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+.badge-amber{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-border)}
+.badge-blue{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border)}
+.badge-purple{background:var(--primary-bg);color:var(--primary2);border-color:var(--primary-border)}
+.badge-muted{background:rgba(255,255,255,0.05);color:var(--muted2);border-color:var(--border2)}
+
+/* ── Protocol badges ── */
+.proto{display:inline-flex;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;font-family:monospace;text-transform:uppercase;letter-spacing:0.5px}
+.proto-sftp{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.proto-ftp{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);animation:fadeIn 0.15s ease}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:28px;width:100%;max-width:490px;max-height:92vh;overflow-y:auto;animation:slideUp 0.2s ease;box-shadow:0 24px 80px rgba(0,0,0,0.6)}
+.modal-title{font-size:18px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px}
+.modal-desc{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.5}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+
+/* ── Toast ── */
+#toast-root{position:fixed;top:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{
+  background:rgba(14,14,26,0.95);border:1px solid var(--border2);
+  border-radius:12px;padding:11px 16px;font-size:13px;font-weight:500;
+  display:flex;align-items:center;gap:9px;min-width:240px;max-width:340px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  backdrop-filter:blur(16px);
+  animation:slideInRight 0.25s cubic-bezier(0.16,1,0.3,1);
+  pointer-events:all;
+}
+.toast-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.toast.success .toast-dot{background:var(--green);box-shadow:0 0 8px rgba(34,197,94,0.6)}
+.toast.error .toast-dot{background:var(--red);box-shadow:0 0 8px rgba(239,68,68,0.6)}
+
+/* ── File list ── */
+.file-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.12s}
+.file-row:hover{background:rgba(255,255,255,0.03)}
+.file-row:last-child{border-bottom:none}
+.file-icon-wrap{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+
+/* ── Activity ── */
+.activity-row{display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:10px;transition:background 0.12s}
+.activity-row:hover{background:rgba(255,255,255,0.03)}
+.activity-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ── Code ── */
+.code-block{background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-family:'SF Mono','Fira Code',monospace;font-size:12px;overflow-x:auto;white-space:pre;color:#b8c0d4;line-height:1.6}
+
+/* ── Connection card ── */
+.conn-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;transition:all 0.2s}
+.conn-card:hover{border-color:var(--border2);box-shadow:0 4px 24px rgba(0,0,0,0.25)}
+
+/* ── Empty states ── */
+.empty-state{text-align:center;padding:56px 24px}
+.empty-icon{font-size:44px;margin-bottom:14px;display:block;opacity:0.6}
+.empty-title{font-size:17px;font-weight:600;margin-bottom:6px}
+.empty-sub{font-size:13px;color:var(--muted);margin-bottom:22px;max-width:280px;margin-left:auto;margin-right:auto;line-height:1.6}
+
+/* ── Auth pages ── */
+.auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+.auth-glow{position:fixed;top:-20%;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(124,92,252,0.12),transparent 70%);pointer-events:none;z-index:0}
+.auth-card{background:var(--surface);border:1px solid var(--border2);border-radius:24px;padding:36px;width:100%;max-width:420px;position:relative;z-index:1;box-shadow:0 24px 80px rgba(0,0,0,0.4)}
+.auth-logo{display:flex;align-items:center;gap:13px;margin-bottom:28px}
+.auth-logo-icon{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--primary),#5b3fd4);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(124,92,252,0.4)}
+
+/* ── Spinner ── */
+.spin{animation:spin 0.75s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:2px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:3px}
+.tab{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:500;color:var(--muted2);cursor:pointer;transition:all 0.15s;border:none;background:transparent}
+.tab.active{background:var(--surface2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.3)}
+.tab:hover:not(.active){color:var(--text)}
+
+/* ── Info box ── */
+.info-box{background:var(--primary-bg);border:1px solid var(--primary-border);border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.info-box-icon{width:30px;height:30px;border-radius:8px;background:rgba(124,92,252,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+
+/* ── Separator ── */
+.sep{height:1px;background:var(--border);margin:20px 0}
+
+/* ── Tooltip-like code inline ── */
+code{background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:5px;font-family:monospace;font-size:12px;color:var(--primary2)}
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  .sidebar,.mobile-menu-overlay,.mobile-menu{display:none}
+  .sidebar.open,.mobile-menu-overlay.open,.mobile-menu.open{display:block}
+  .main-content{margin-left:0}
+  .mobile-header{display:flex}
+  .page-body{padding:20px 16px}
+}
+@media(max-width:600px){
+  .page-header{flex-direction:column;align-items:flex-start}
+  .page-header .btn{width:100%;justify-content:center}
+}
+
+/* ── Subtle grid background ── */
+.grid-dots{
+  background-image:radial-gradient(circle,rgba(255,255,255,0.04) 1px,transparent 1px);
+  background-size:28px 28px;
+}
 </style>
 </head>
 <body>
@@ -131,342 +289,357 @@ label { font-size:13px; font-weight:500; color:var(--muted); margin-bottom:4px; 
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script type="text/babel" data-presets="react">
-const { useState, useEffect, useCallback, useRef, createContext, useContext } = React;
+const { useState, useEffect, useCallback, useRef, createContext, useContext, useMemo } = React;
 
-// ─── Toast ───────────────────────────────────────────────
+// ─── Toast ────────────────────────────────────────────────
 const toast = {
-  _id: 0,
-  show(msg, type = 'success') {
+  show(msg, type='success') {
     const el = document.createElement('div');
     el.className = `toast ${type}`;
-    el.innerHTML = `<span>${type === 'success' ? '✓' : '✕'}</span><span>${msg}</span>`;
-    document.getElementById('toast-root').appendChild(el);
-    setTimeout(() => el.remove(), 3500);
+    el.innerHTML = `<span class="toast-dot"></span><span>${msg}</span>`;
+    const root = document.getElementById('toast-root');
+    root.appendChild(el);
+    setTimeout(() => { el.style.animation='none'; el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(()=>el.remove(),300); }, 3200);
   },
-  success(m) { this.show(m,'success'); },
-  error(m)   { this.show(m,'error'); }
+  success(m){ this.show(m,'success') },
+  error(m){ this.show(m,'error') }
 };
 
 // ─── Router ───────────────────────────────────────────────
-const RouterCtx = createContext();
+const RouterCtx = createContext(null);
 function Router({ children }) {
   const [path, setPath] = useState(window.location.pathname);
-  useEffect(() => {
-    const onPop = () => setPath(window.location.pathname);
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, []);
   const navigate = useCallback((to) => {
     window.history.pushState({}, '', to);
     setPath(to);
   }, []);
+  useEffect(() => {
+    const h = () => setPath(window.location.pathname);
+    window.addEventListener('popstate', h);
+    return () => window.removeEventListener('popstate', h);
+  }, []);
   return <RouterCtx.Provider value={{ path, navigate }}>{children}</RouterCtx.Provider>;
 }
 function useRouter() { return useContext(RouterCtx); }
-function Link({ to, children, className, onClick, style }) {
+function Link({ to, children, className, style, onClick }) {
   const { navigate } = useRouter();
   return (
     <a href={to} className={className} style={style}
-       onClick={e => { e.preventDefault(); if(onClick) onClick(); navigate(to); }}>
+       onClick={e => { e.preventDefault(); onClick?.(); navigate(to); }}>
       {children}
     </a>
   );
 }
-function Route({ path: p, exact, children }) {
-  const { path } = useRouter();
-  const match = exact ? path === p : path.startsWith(p);
-  return match ? children : null;
-}
 
-// ─── API ──────────────────────────────────────────────────
-const API = '/api';
+// ─── API ─────────────────────────────────────────────────
 async function apiFetch(method, url, body, isFile) {
   const token = localStorage.getItem('token');
   const headers = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
   if (body && !isFile) headers['Content-Type'] = 'application/json';
-
-  const opts = { method, headers };
-  if (body) opts.body = isFile ? body : JSON.stringify(body);
-
-  const res = await fetch(API + url, opts);
+  const res = await fetch('/api' + url, { method, headers, body: body ? (isFile ? body : JSON.stringify(body)) : undefined });
   if (res.status === 401) {
     localStorage.removeItem('token');
     window.history.pushState({}, '', '/login');
     window.dispatchEvent(new PopStateEvent('popstate'));
-    throw new Error('Unauthorized');
+    throw new Error('Session expired');
   }
-  const data = res.headers.get('content-type')?.includes('application/json')
-    ? await res.json() : await res.blob();
+  const ct = res.headers.get('content-type') || '';
+  const data = ct.includes('application/json') ? await res.json() : await res.blob();
   if (!res.ok) throw new Error(data?.detail || `Error ${res.status}`);
   return data;
 }
 const api = {
-  get:    (u)    => apiFetch('GET', u),
-  post:   (u,b)  => apiFetch('POST', u, b),
-  put:    (u,b)  => apiFetch('PUT', u, b),
-  delete: (u)    => apiFetch('DELETE', u),
-  postFile:(u,b) => apiFetch('POST', u, b, true),
+  get:     u    => apiFetch('GET', u),
+  post:    (u,b)=> apiFetch('POST', u, b),
+  put:     (u,b)=> apiFetch('PUT', u, b),
+  delete:  u    => apiFetch('DELETE', u),
+  postFile:(u,b)=> apiFetch('POST', u, b, true),
 };
 
 // ─── Auth Context ─────────────────────────────────────────
-const AuthCtx = createContext();
+const AuthCtx = createContext(null);
+// NOTE: AuthProvider must be rendered ONCE at root, NOT inside route components
 function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser]     = useState(null);
   const [loading, setLoading] = useState(true);
-  const { navigate } = useRouter();
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) { setLoading(false); return; }
-    api.get('/auth/me').then(u => setUser(u)).catch(() => localStorage.removeItem('token')).finally(() => setLoading(false));
-  }, []);
+    api.get('/auth/me')
+      .then(u => setUser(u))
+      .catch(() => localStorage.removeItem('token'))
+      .finally(() => setLoading(false));
+  }, []); // runs ONCE on mount only
+
   const login = async (email, password) => {
     const data = await api.post('/auth/login', { email, password });
     localStorage.setItem('token', data.access_token);
-    setUser(data.user); return data.user;
+    setUser(data.user);
+    return data.user;
   };
   const register = async (name, email, password) => {
     const data = await api.post('/auth/register', { name, email, password });
     localStorage.setItem('token', data.access_token);
-    setUser(data.user); return data.user;
+    setUser(data.user);
+    return data.user;
   };
   const logout = () => {
-    localStorage.removeItem('token'); setUser(null); navigate('/login');
+    localStorage.removeItem('token');
+    setUser(null);
   };
+
   return <AuthCtx.Provider value={{ user, loading, login, register, logout }}>{children}</AuthCtx.Provider>;
 }
 function useAuth() { return useContext(AuthCtx); }
 
-// ─── Icons ────────────────────────────────────────────────
-const Ico = ({ d, size=18, color='currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    {d.map((p,i) => <path key={i} d={p}/>)}
-  </svg>
-);
-const Icons = {
-  Dashboard:  () => <Ico d={["M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z","M9 22V12h6v10"]}/>,
-  Server:     () => <Ico d={["M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"]}/>,
-  Folder:     () => <Ico d={["M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"]}/>,
-  Key:        () => <Ico d={["m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4","m21 2-9.6 9.6","m3.5 17.5 3 3L13 15l-3-3-6.5 6.5"]}/>,
-  FileText:   () => <Ico d={["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6","M16 13H8","M16 17H8","M10 9H8"]}/>,
-  Settings:   () => <Ico d={["M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z","M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"]}/>,
-  LogOut:     () => <Ico d={["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4","M16 17l5-5-5-5","M21 12H9"]}/>,
-  Zap:        () => <Ico d={["M13 2 3 14h9l-1 8 10-12h-9l1-8z"]}/>,
-  Plus:       () => <Ico d={["M12 5v14","M5 12h14"]}/>,
-  Trash:      () => <Ico d={["M3 6h18","M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6","M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"]}/>,
-  Edit:       () => <Ico d={["M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7","M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"]}/>,
-  Copy:       () => <Ico d={["M20 9h-9a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2z","M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 0 2 2v1"]}/>,
-  Check:      () => <Ico d={["M20 6 9 17l-5-5"]}/>,
-  X:          () => <Ico d={["M18 6 6 18","M6 6l12 12"]}/>,
-  ChevronRight:()=> <Ico d={["M9 18l6-6-6-6"]}/>,
-  ChevronUp:  () => <Ico d={["M18 15l-6-6-6 6"]}/>,
-  Home:       () => <Ico d={["M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z","M9 22V12h6v10"]}/>,
-  FolderPlus: () => <Ico d={["M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z","M12 11v6","M9 14h6"]}/>,
-  Upload:     () => <Ico d={["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4","M17 8l-5-5-5 5","M12 3v12"]}/>,
-  Download:   () => <Ico d={["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4","M7 10l5 5 5-5","M12 15V3"]}/>,
-  RefreshCw:  () => <Ico d={["M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8","M21 3v5h-5","M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16","M8 16H3v5"]}/>,
-  Activity:   () => <Ico d={["M22 12h-4l-3 9L9 3l-3 9H2"]}/>,
-  ArrowRight: () => <Ico d={["M5 12h14","M12 5l7 7-7 7"]}/>,
-  Eye:        () => <Ico d={["M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z","M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"]}/>,
-  EyeOff:     () => <Ico d={["M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94","M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19","M1 1l22 22"]}/>,
-  Shield:     () => <Ico d={["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"]}/>,
-  Clock:      () => <Ico d={["M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z","M12 6v6l4 2"]}/>,
-  Alert:      () => <Ico d={["M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z","M12 9v4","M12 17h.01"]}/>,
-  File:       () => <Ico d={["M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z","M13 2v7h7"]}/>,
-  MoreVert:   () => <Ico d={["M12 5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z","M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z","M12 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"]}/>,
-  Code:       () => <Ico d={["M16 18l6-6-6-6","M8 6l-6 6 6 6"]}/>,
-  User:       () => <Ico d={["M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2","M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"]}/>,
-  Zap2:       () => <Ico d={["M13 2 3 14h9l-1 8 10-12h-9l1-8z"]}/>,
+// ─── Icons (SVG) ─────────────────────────────────────────
+function Icon({ d, size=16, color='currentColor', strokeWidth=1.75 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+         stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+      {[].concat(d).map((p,i) => <path key={i} d={p}/>)}
+    </svg>
+  );
+}
+const I = {
+  Dashboard:   () => <Icon d={["M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z","M9 22V12h6v10"]}/>,
+  Server:      () => <Icon d={["M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"]}/>,
+  Folder:      () => <Icon d={["M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"]}/>,
+  Key:         () => <Icon d={["m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4","m21 2-9.6 9.6","m3.5 17.5 3 3L13 15l-3-3-6.5 6.5"]}/>,
+  Docs:        () => <Icon d={["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6","M16 13H8","M16 17H8","M10 9H8"]}/>,
+  Settings:    () => <Icon d={["M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z","M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"]}/>,
+  LogOut:      () => <Icon d={["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4","M16 17l5-5-5-5","M21 12H9"]}/>,
+  Zap:         () => <Icon d={["M13 2 3 14h9l-1 8 10-12h-9l1-8z"]} strokeWidth={1.5}/>,
+  Plus:        () => <Icon d={["M12 5v14","M5 12h14"]}/>,
+  Trash:       () => <Icon d={["M3 6h18","M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6","M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"]}/>,
+  Edit:        () => <Icon d={["M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7","M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"]}/>,
+  Copy:        () => <Icon d={["M20 9h-9a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2z","M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 0 2 2v1"]}/>,
+  Check:       () => <Icon d={["M20 6 9 17l-5-5"]}/>,
+  X:           () => <Icon d={["M18 6 6 18","M6 6l12 12"]}/>,
+  Right:       () => <Icon d={["M9 18l6-6-6-6"]}/>,
+  Up:          () => <Icon d={["M18 15l-6-6-6 6"]}/>,
+  Home:        () => <Icon d={["M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z","M9 22V12h6v10"]}/>,
+  FolderPlus:  () => <Icon d={["M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z","M12 11v6","M9 14h6"]}/>,
+  Upload:      () => <Icon d={["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4","M17 8l-5-5-5 5","M12 3v12"]}/>,
+  Download:    () => <Icon d={["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4","M7 10l5 5 5-5","M12 15V3"]}/>,
+  Refresh:     () => <Icon d={["M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8","M21 3v5h-5","M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16","M8 16H3v5"]}/>,
+  Activity:    () => <Icon d={["M22 12h-4l-3 9L9 3l-3 9H2"]}/>,
+  ArrowRight:  () => <Icon d={["M5 12h14","M12 5l7 7-7 7"]}/>,
+  Eye:         () => <Icon d={["M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z","M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"]}/>,
+  EyeOff:      () => <Icon d={["M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94","M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19","M1 1l22 22"]}/>,
+  Shield:      () => <Icon d={["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"]}/>,
+  Clock:       () => <Icon d={["M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z","M12 6v6l4 2"]}/>,
+  Alert:       () => <Icon d={["M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z","M12 9v4","M12 17h.01"]}/>,
+  File:        () => <Icon d={["M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z","M13 2v7h7"]}/>,
+  Code:        () => <Icon d={["M16 18l6-6-6-6","M8 6l-6 6 6 6"]}/>,
+  User:        () => <Icon d={["M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2","M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"]}/>,
+  Menu:        () => <Icon d={["M3 6h18","M3 12h18","M3 18h18"]}/>,
+  Hash:        () => <Icon d={["M4 9h16","M4 15h16","M10 3 8 21","M16 3l-2 18"]}/>,
 };
 
-// ─── Helpers ──────────────────────────────────────────────
-function formatBytes(b) {
-  if (!b && b !== 0) return '-';
-  if (b === 0) return '0 B';
-  const i = Math.floor(Math.log(b) / Math.log(1024));
-  return (b / Math.pow(1024, i)).toFixed(1) + ' ' + ['B','KB','MB','GB'][i];
+// ─── Helpers ─────────────────────────────────────────────
+function Spinner({ size=15 }) {
+  return (
+    <svg className="spin" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <circle cx="12" cy="12" r="10" strokeOpacity="0.15"/>
+      <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+    </svg>
+  );
 }
-function formatDate(s) {
-  if (!s) return '-';
-  return new Date(s).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+function formatBytes(b) {
+  if (b == null || b === '') return '—';
+  if (b === 0) return '0 B';
+  const i = Math.floor(Math.log(b)/Math.log(1024));
+  return (b/Math.pow(1024,i)).toFixed(1)+' '+['B','KB','MB','GB','TB'][i];
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
 function relTime(s) {
-  if (!s) return '-';
-  const d = (Date.now() - new Date(s)) / 1000;
-  if (d < 60) return 'Just now';
+  if (!s) return '—';
+  const d = (Date.now()-new Date(s))/1000;
+  if (d < 60)   return 'Just now';
   if (d < 3600) return `${Math.floor(d/60)}m ago`;
-  if (d < 86400) return `${Math.floor(d/3600)}h ago`;
-  if (d < 604800) return `${Math.floor(d/86400)}d ago`;
-  return formatDate(s);
+  if (d < 86400)return `${Math.floor(d/3600)}h ago`;
+  if (d < 604800)return `${Math.floor(d/86400)}d ago`;
+  return fmtDate(s);
 }
-function fileIcon(type, name) {
-  if (type === 'directory') return '📁';
-  const ext = name?.split('.').pop()?.toLowerCase();
-  const m = { png:'🖼️',jpg:'🖼️',jpeg:'🖼️',gif:'🖼️',svg:'🖼️',webp:'🖼️',
-              pdf:'📄',doc:'📄',docx:'📄',txt:'📄',md:'📄',
-              js:'💻',ts:'💻',jsx:'💻',tsx:'💻',py:'💻',html:'💻',css:'💻',json:'💻',
-              zip:'📦',tar:'📦',gz:'📦',rar:'📦',
-              mp3:'🎵',wav:'🎵',mp4:'🎬',avi:'🎬',mov:'🎬' };
-  return m[ext] || '📄';
+function fileEmoji(type, name) {
+  if (type==='directory') return '📁';
+  const e = name?.split('.').pop()?.toLowerCase();
+  const m={png:'🖼️',jpg:'🖼️',jpeg:'🖼️',gif:'🖼️',svg:'🖼️',webp:'🖼️',ico:'🖼️',
+           pdf:'📄',doc:'📄',docx:'📄',txt:'📝',md:'📝',
+           js:'💻',ts:'💻',jsx:'💻',tsx:'💻',py:'🐍',java:'☕',rb:'💎',go:'🐹',rs:'🦀',
+           html:'🌐',css:'🎨',json:'📋',xml:'📋',yml:'📋',yaml:'📋',
+           zip:'📦',tar:'📦',gz:'📦',rar:'📦',7z:'📦',
+           mp3:'🎵',wav:'🎵',flac:'🎵',mp4:'🎬',avi:'🎬',mov:'🎬',mkv:'🎬',
+           sh:'⚙️',bash:'⚙️',sql:'🗄️',db:'🗄️'};
+  return m[e] || '📄';
 }
 function parentPath(p) {
-  if (!p || p === '/') return '/';
-  const parts = p.split('/').filter(Boolean); parts.pop();
-  return '/' + parts.join('/');
+  if(!p||p==='/') return '/';
+  const parts=p.split('/').filter(Boolean); parts.pop();
+  return '/'+parts.join('/');
 }
 function joinPath(...parts) {
-  return '/' + parts.map(p => p.replace(/^\/|\/$/g,'')).filter(Boolean).join('/');
-}
-function Spinner({ size = 16 }) {
-  return <svg className="spin" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.2"/><path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/></svg>;
+  return '/'+parts.map(p=>p.replace(/^\/|\/$/g,'')).filter(Boolean).join('/');
 }
 
 // ─── Layout ───────────────────────────────────────────────
 const NAV = [
-  { path:'/',            label:'Dashboard',   icon:'Dashboard' },
-  { path:'/connections', label:'Connections', icon:'Server' },
-  { path:'/browser',     label:'File Browser',icon:'Folder' },
-  { path:'/api-keys',    label:'API Keys',    icon:'Key' },
-  { path:'/docs',        label:'API Docs',    icon:'FileText' },
-  { path:'/settings',    label:'Settings',    icon:'Settings' },
+  {path:'/',label:'Dashboard',icon:'Dashboard'},
+  {path:'/connections',label:'Connections',icon:'Server'},
+  {path:'/browser',label:'File Browser',icon:'Folder'},
+  {path:'/api-keys',label:'API Keys',icon:'Key'},
+  {path:'/docs',label:'API Docs',icon:'Docs'},
+  {path:'/settings',label:'Settings',icon:'Settings'},
 ];
-function Layout({ children }) {
-  const { user, logout } = useAuth();
+function Sidebar({ onNav }) {
   const { path, navigate } = useRouter();
-  const [mobileOpen, setMobileOpen] = useState(false);
-
+  const { user, logout }   = useAuth();
+  const go = (p) => { navigate(p); onNav?.(); };
+  const goLogout = () => { logout(); navigate('/login'); onNav?.(); };
   return (
-    <div style={{ minHeight:'100vh', background:'var(--bg)' }} className="grid-bg">
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div className="sidebar-logo">
+        <div className="logo-icon"><I.Zap/></div>
+        <div>
+          <div className="logo-text">Relay Drive</div>
+          <div className="logo-sub">FTP/SFTP Gateway</div>
+        </div>
+      </div>
+      <nav className="sidebar-nav">
+        {NAV.map(n => {
+          const active = n.path==='/' ? path==='/' : path.startsWith(n.path);
+          const Icon = I[n.icon];
+          return (
+            <div key={n.path} className={`nav-item${active?' active':''}`} onClick={()=>go(n.path)}>
+              <Icon/> {n.label}
+            </div>
+          );
+        })}
+      </nav>
+      <div className="sidebar-footer">
+        <div className="user-row">
+          <div className="user-avatar">{user?.name?.charAt(0).toUpperCase()}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div className="user-name">{user?.name}</div>
+            <div className="user-email">{user?.email}</div>
+          </div>
+        </div>
+        <div className="nav-item" onClick={goLogout} style={{color:'var(--muted2)'}}>
+          <I.LogOut/> Sign Out
+        </div>
+      </div>
+    </div>
+  );
+}
+function Layout({ children }) {
+  const [mOpen, setMOpen] = useState(false);
+  const { path } = useRouter();
+  useEffect(() => setMOpen(false), [path]);
+  return (
+    <div className="app-shell grid-dots" style={{background:'var(--bg)'}}>
       {/* Desktop sidebar */}
-      <aside style={{ position:'fixed', top:0, left:0, width:256, height:'100vh', background:'var(--card)', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', padding:'24px 16px', zIndex:40 }} className="hidden lg:flex">
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:32 }}>
-          <div style={{ width:40, height:40, borderRadius:12, background:'var(--primary)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <Icons.Zap/>
-          </div>
-          <div>
-            <div style={{ fontWeight:700, fontSize:17 }}>Relay Drive</div>
-            <div style={{ fontSize:11, color:'var(--muted)' }}>FTP/SFTP Gateway</div>
-          </div>
-        </div>
-        <nav style={{ flex:1, display:'flex', flexDirection:'column', gap:4 }}>
-          {NAV.map(n => {
-            const Icon = Icons[n.icon];
-            const active = n.path === '/' ? path === '/' : path.startsWith(n.path);
-            return (
-              <div key={n.path} className={`nav-item${active?' active':''}`} onClick={() => navigate(n.path)}>
-                <Icon/> <span>{n.label}</span>
-              </div>
-            );
-          })}
-        </nav>
-        <div style={{ borderTop:'1px solid var(--border)', paddingTop:16 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 8px 12px' }}>
-            <div style={{ width:34, height:34, borderRadius:'50%', background:'var(--secondary)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:14 }}>
-              {user?.name?.charAt(0).toUpperCase()}
-            </div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:13, fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.name}</div>
-              <div style={{ fontSize:11, color:'var(--muted)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.email}</div>
-            </div>
-          </div>
-          <div className="nav-item" onClick={logout} style={{ color:'var(--muted)' }}>
-            <Icons.LogOut/> <span>Sign Out</span>
-          </div>
-        </div>
+      <aside className="sidebar">
+        <Sidebar/>
       </aside>
 
-      {/* Mobile top bar */}
-      <div style={{ position:'sticky', top:0, zIndex:30, background:'var(--card)', borderBottom:'1px solid var(--border)', padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }} className="lg:hidden">
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ width:32, height:32, borderRadius:8, background:'var(--primary)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <Icons.Zap/>
+      {/* Mobile header */}
+      <div className="mobile-header">
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <div className="logo-icon" style={{width:32,height:32,borderRadius:9}}>
+            <I.Zap/>
           </div>
-          <span style={{ fontWeight:700 }}>Relay Drive</span>
+          <span style={{fontWeight:700,fontSize:15}}>Relay Drive</span>
         </div>
-        <button className="btn btn-ghost btn-icon" onClick={() => setMobileOpen(!mobileOpen)}>
-          {mobileOpen ? <Icons.X/> : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>}
+        <button className="btn btn-ghost btn-icon" onClick={()=>setMOpen(v=>!v)}>
+          {mOpen ? <I.X/> : <I.Menu/>}
         </button>
       </div>
 
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.8)', zIndex:50 }} onClick={() => setMobileOpen(false)}>
-          <div style={{ position:'absolute', top:0, right:0, width:260, height:'100%', background:'var(--card)', padding:'24px 16px' }} onClick={e => e.stopPropagation()}>
-            <nav style={{ display:'flex', flexDirection:'column', gap:4, marginTop:16 }}>
-              {NAV.map(n => {
-                const Icon = Icons[n.icon];
-                const active = n.path === '/' ? path === '/' : path.startsWith(n.path);
-                return (
-                  <div key={n.path} className={`nav-item${active?' active':''}`} onClick={() => { navigate(n.path); setMobileOpen(false); }}>
-                    <Icon/> <span>{n.label}</span>
-                  </div>
-                );
-              })}
-            </nav>
-            <div style={{ marginTop:24, borderTop:'1px solid var(--border)', paddingTop:16 }}>
-              <div className="nav-item" onClick={() => { logout(); setMobileOpen(false); }}>
-                <Icons.LogOut/> <span>Sign Out</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Mobile overlay + drawer */}
+      {mOpen && <div className="mobile-menu-overlay open" onClick={()=>setMOpen(false)}/>}
+      <div className={`mobile-menu${mOpen?' open':''}`}>
+        <Sidebar onNav={()=>setMOpen(false)}/>
+      </div>
 
-      {/* Main */}
-      <main style={{ marginLeft:0, paddingBottom:32 }} className="lg:ml-64">
-        <div style={{ maxWidth:1100, margin:'0 auto', padding:'24px 16px' }}>
-          {children}
-        </div>
-      </main>
+      <div className="main-content">
+        <div className="page-body">{children}</div>
+      </div>
     </div>
   );
 }
 
-// ─── Page: Login ──────────────────────────────────────────
+// ─── Guards ───────────────────────────────────────────────
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+  const { navigate }      = useRouter();
+  useEffect(() => { if (!loading && !user) navigate('/login'); }, [user, loading]);
+  if (loading) return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg)'}}>
+      <Spinner size={32}/>
+    </div>
+  );
+  if (!user) return null;
+  return children;
+}
+function PublicRoute({ children }) {
+  const { user, loading } = useAuth();
+  const { navigate }      = useRouter();
+  useEffect(() => { if (!loading && user) navigate('/'); }, [user, loading]);
+  if (loading || user) return null;
+  return children;
+}
+
+// ─── Page: Login ─────────────────────────────────────────
 function Login() {
-  const { login } = useAuth();
+  const { login }  = useAuth();
   const { navigate } = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail]     = useState('');
+  const [pass,  setPass]      = useState('');
   const [loading, setLoading] = useState(false);
   const submit = async e => {
     e.preventDefault(); setLoading(true);
-    try { await login(email, password); toast.success('Welcome back!'); navigate('/'); }
-    catch(err) { toast.error(err.message || 'Login failed'); }
+    try { await login(email, pass); toast.success('Welcome back!'); navigate('/'); }
+    catch(err) { toast.error(err.message||'Login failed'); }
     finally { setLoading(false); }
   };
   return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }} className="grid-bg">
-      <div style={{ width:'100%', maxWidth:420 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:32, justifyContent:'center' }}>
-          <div style={{ width:44, height:44, borderRadius:12, background:'var(--primary)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <Icons.Zap/>
-          </div>
+    <div className="auth-page">
+      <div className="auth-glow"/>
+      <div className="auth-card">
+        <div className="auth-logo">
+          <div className="auth-logo-icon"><I.Zap/></div>
           <div>
-            <div style={{ fontWeight:800, fontSize:22 }}>Relay Drive</div>
-            <div style={{ fontSize:12, color:'var(--muted)' }}>FTP/SFTP Gateway</div>
+            <div style={{fontWeight:800,fontSize:20,letterSpacing:'-0.3px'}}>Relay Drive</div>
+            <div style={{fontSize:12,color:'var(--muted)'}}>FTP/SFTP Gateway Service</div>
           </div>
         </div>
-        <div className="bento-card" style={{ padding:28 }}>
-          <h2 style={{ fontSize:22, fontWeight:700, marginBottom:4 }}>Sign in</h2>
-          <p style={{ color:'var(--muted)', fontSize:13, marginBottom:20 }}>Enter your credentials to continue</p>
-          <form onSubmit={submit}>
-            <div style={{ marginBottom:14 }}>
-              <label>Email</label>
-              <input type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} required/>
-            </div>
-            <div style={{ marginBottom:20 }}>
-              <label>Password</label>
-              <input type="password" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} required/>
-            </div>
-            <button className="btn btn-primary" style={{ width:'100%', justifyContent:'center' }} disabled={loading}>
-              {loading ? <Spinner/> : <Icons.ArrowRight/>} Sign in
-            </button>
-          </form>
-          <p style={{ textAlign:'center', marginTop:16, fontSize:13, color:'var(--muted)' }}>
-            No account? <Link to="/register" style={{ color:'var(--primary)', fontWeight:600 }}>Create one</Link>
-          </p>
+        <div style={{marginBottom:24}}>
+          <h1 style={{fontSize:22,fontWeight:700,letterSpacing:'-0.5px',marginBottom:4}}>Sign in</h1>
+          <p style={{fontSize:13,color:'var(--muted)'}}>Enter your credentials to continue</p>
         </div>
+        <form onSubmit={submit}>
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input className="input" type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} required autoFocus/>
+          </div>
+          <div className="form-group" style={{marginBottom:22}}>
+            <label className="form-label">Password</label>
+            <input className="input" type="password" placeholder="Enter your password" value={pass} onChange={e=>setPass(e.target.value)} required/>
+          </div>
+          <button type="submit" className="btn btn-primary" style={{width:'100%',justifyContent:'center',padding:'11px'}} disabled={loading}>
+            {loading ? <Spinner/> : <I.ArrowRight/>} Sign in
+          </button>
+        </form>
+        <p style={{textAlign:'center',marginTop:20,fontSize:13,color:'var(--muted)'}}>
+          No account?{' '}
+          <Link to="/register" style={{color:'var(--primary)',fontWeight:600,textDecoration:'none'}}>Create one →</Link>
+        </p>
       </div>
     </div>
   );
@@ -476,54 +649,54 @@ function Login() {
 function Register() {
   const { register } = useAuth();
   const { navigate } = useRouter();
-  const [name, setName] = useState('');
+  const [name,  setName]  = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [pass,  setPass]  = useState('');
   const [loading, setLoading] = useState(false);
   const submit = async e => {
     e.preventDefault();
-    if (password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+    if (pass.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     setLoading(true);
-    try { await register(name, email, password); toast.success('Account created!'); navigate('/'); }
-    catch(err) { toast.error(err.message || 'Registration failed'); }
+    try { await register(name, email, pass); toast.success('Account created!'); navigate('/'); }
+    catch(err) { toast.error(err.message||'Registration failed'); }
     finally { setLoading(false); }
   };
   return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }} className="grid-bg">
-      <div style={{ width:'100%', maxWidth:420 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:32, justifyContent:'center' }}>
-          <div style={{ width:44, height:44, borderRadius:12, background:'var(--primary)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <Icons.Zap/>
-          </div>
+    <div className="auth-page">
+      <div className="auth-glow"/>
+      <div className="auth-card">
+        <div className="auth-logo">
+          <div className="auth-logo-icon"><I.Zap/></div>
           <div>
-            <div style={{ fontWeight:800, fontSize:22 }}>Relay Drive</div>
-            <div style={{ fontSize:12, color:'var(--muted)' }}>FTP/SFTP Gateway</div>
+            <div style={{fontWeight:800,fontSize:20,letterSpacing:'-0.3px'}}>Relay Drive</div>
+            <div style={{fontSize:12,color:'var(--muted)'}}>FTP/SFTP Gateway Service</div>
           </div>
         </div>
-        <div className="bento-card" style={{ padding:28 }}>
-          <h2 style={{ fontSize:22, fontWeight:700, marginBottom:4 }}>Create account</h2>
-          <p style={{ color:'var(--muted)', fontSize:13, marginBottom:20 }}>Enter your details to get started</p>
-          <form onSubmit={submit}>
-            <div style={{ marginBottom:14 }}>
-              <label>Name</label>
-              <input type="text" placeholder="Your name" value={name} onChange={e=>setName(e.target.value)} required/>
-            </div>
-            <div style={{ marginBottom:14 }}>
-              <label>Email</label>
-              <input type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} required/>
-            </div>
-            <div style={{ marginBottom:20 }}>
-              <label>Password</label>
-              <input type="password" placeholder="At least 6 characters" value={password} onChange={e=>setPassword(e.target.value)} required/>
-            </div>
-            <button className="btn btn-primary" style={{ width:'100%', justifyContent:'center' }} disabled={loading}>
-              {loading ? <Spinner/> : <Icons.ArrowRight/>} Create account
-            </button>
-          </form>
-          <p style={{ textAlign:'center', marginTop:16, fontSize:13, color:'var(--muted)' }}>
-            Already have an account? <Link to="/login" style={{ color:'var(--primary)', fontWeight:600 }}>Sign in</Link>
-          </p>
+        <div style={{marginBottom:24}}>
+          <h1 style={{fontSize:22,fontWeight:700,letterSpacing:'-0.5px',marginBottom:4}}>Create account</h1>
+          <p style={{fontSize:13,color:'var(--muted)'}}>Enter your details to get started</p>
         </div>
+        <form onSubmit={submit}>
+          <div className="form-group">
+            <label className="form-label">Full Name</label>
+            <input className="input" type="text" placeholder="Your name" value={name} onChange={e=>setName(e.target.value)} required autoFocus/>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input className="input" type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} required/>
+          </div>
+          <div className="form-group" style={{marginBottom:22}}>
+            <label className="form-label">Password</label>
+            <input className="input" type="password" placeholder="At least 6 characters" value={pass} onChange={e=>setPass(e.target.value)} required/>
+          </div>
+          <button type="submit" className="btn btn-primary" style={{width:'100%',justifyContent:'center',padding:'11px'}} disabled={loading}>
+            {loading ? <Spinner/> : <I.ArrowRight/>} Create account
+          </button>
+        </form>
+        <p style={{textAlign:'center',marginTop:20,fontSize:13,color:'var(--muted)'}}>
+          Have an account?{' '}
+          <Link to="/login" style={{color:'var(--primary)',fontWeight:600,textDecoration:'none'}}>Sign in →</Link>
+        </p>
       </div>
     </div>
   );
@@ -532,87 +705,76 @@ function Register() {
 // ─── Page: Dashboard ─────────────────────────────────────
 function Dashboard() {
   const [stats, setStats] = useState(null);
-  const { navigate } = useRouter();
+  const { navigate }      = useRouter();
   useEffect(() => {
-    api.get('/dashboard/stats').then(setStats).catch(() => toast.error('Failed to load stats'));
+    api.get('/dashboard/stats').then(setStats).catch(()=>toast.error('Failed to load stats'));
   }, []);
-  const actionLabel = a => ({
-    list_directory:'Listed directory', upload_file:'Uploaded file', download_file:'Downloaded file',
-    delete_file:'Deleted file', delete_directory:'Deleted directory', create_directory:'Created directory',
-    rename_file:'Renamed file', test_connection:'Tested connection', create_connection:'Created connection',
-    update_connection:'Updated connection', delete_connection:'Deleted connection',
-    create_api_key:'Created API key', revoke_api_key:'Revoked API key',
-  }[a] || a);
-
+  const ACTION_MAP = {
+    list_directory:'Listed directory',upload_file:'Uploaded file',download_file:'Downloaded file',
+    delete_file:'Deleted file',delete_directory:'Deleted directory',create_directory:'Created directory',
+    rename_file:'Renamed file',test_connection:'Tested connection',create_connection:'Created connection',
+    update_connection:'Updated connection',delete_connection:'Deleted connection',
+    create_api_key:'Created API key',revoke_api_key:'Revoked API key',
+  };
   return (
     <Layout>
-      <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-          <div>
-            <h1 style={{ fontSize:26, fontWeight:700, margin:0 }}>Dashboard</h1>
-            <p style={{ color:'var(--muted)', fontSize:13, marginTop:4 }}>Overview of your FTP/SFTP relay service</p>
-          </div>
-          <button className="btn btn-primary" onClick={() => navigate('/connections')}>
-            <Icons.Plus/> Add Connection
-          </button>
+      <div className="page-header">
+        <div>
+          <div className="page-title">Dashboard</div>
+          <div className="page-sub">Overview of your FTP/SFTP relay service</div>
         </div>
+        <button className="btn btn-primary" onClick={()=>navigate('/connections')}><I.Plus/> Add Connection</button>
+      </div>
 
-        {/* Stats */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:16 }}>
-          {[
-            { label:'Server Connections', val:stats?.total_connections??'—', sub:'FTP & SFTP servers', link:'/connections', Icon:Icons.Server },
-            { label:'Active API Keys', val:`${stats?.active_api_keys??'—'} / ${stats?.total_api_keys??'—'}`, sub:'Keys for API access', link:'/api-keys', Icon:Icons.Key },
-            { label:'Operations Today', val:stats?.operations_today??'—', sub:'File operations', link:'/browser', Icon:Icons.Activity },
-          ].map(({ label, val, sub, link, Icon }) => (
-            <div key={label} className="bento-card">
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                <span style={{ fontSize:12, color:'var(--muted)', fontWeight:500 }}>{label}</span>
-                <Icon/>
+      {/* Stats */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(210px,1fr))',gap:14,marginBottom:20}}>
+        {[
+          {label:'Server Connections',val:stats?.total_connections??'—',sub:'FTP & SFTP servers configured',link:'/connections',color:'var(--primary)'},
+          {label:'Active API Keys',val:`${stats?.active_api_keys??'—'} / ${stats?.total_api_keys??'—'}`,sub:'Keys for programmatic access',link:'/api-keys',color:'var(--green)'},
+          {label:'Operations Today',val:stats?.operations_today??'—',sub:'File operations performed',link:'/browser',color:'var(--amber)'},
+        ].map(s=>(
+          <div key={s.label} className="stat-card" onClick={()=>navigate(s.link)}>
+            <div className="stat-label">{s.label}</div>
+            <div className="stat-num" style={{backgroundImage:`linear-gradient(135deg,${s.color},${s.color}88)`}}>{s.val}</div>
+            <div className="stat-sub">{s.sub}</div>
+            <div className="stat-link" style={{color:s.color}}>Manage <I.ArrowRight/></div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent activity */}
+      <div className="card card-p">
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:18,fontSize:15,fontWeight:600}}>
+          <I.Activity/> Recent Activity
+        </div>
+        {!stats ? (
+          <div style={{textAlign:'center',padding:32}}><Spinner size={24}/></div>
+        ) : stats.recent_activities?.length > 0 ? (
+          <div>{stats.recent_activities.map(a=>(
+            <div key={a.id} className="activity-row">
+              <div className="activity-icon" style={{background:a.status==='success'?'var(--green-bg)':'var(--red-bg)',color:a.status==='success'?'var(--green)':'var(--red)'}}>
+                <I.Activity/>
               </div>
-              <div style={{ fontSize:30, fontWeight:700, marginBottom:4 }}>{val}</div>
-              <div style={{ fontSize:11, color:'var(--muted)' }}>{sub}</div>
-              <div onClick={() => navigate(link)} style={{ marginTop:12, fontSize:12, color:'var(--primary)', cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}>
-                Manage <Icons.ArrowRight/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:500}}>
+                  {ACTION_MAP[a.action]||a.action}
+                  {a.connection_name && <span style={{color:'var(--muted)',fontWeight:400}}> on <b style={{color:'var(--muted2)',fontWeight:600}}>{a.connection_name}</b></span>}
+                </div>
+                {a.path && <div style={{fontSize:11,color:'var(--muted)',fontFamily:'monospace',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginTop:1}}>{a.path}</div>}
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+                <span className={`badge ${a.status==='success'?'badge-green':'badge-red'}`}>{a.status}</span>
+                <span style={{fontSize:11,color:'var(--muted)',whiteSpace:'nowrap'}}>{relTime(a.timestamp)}</span>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bento-card">
-          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16, fontSize:15, fontWeight:600 }}>
-            <Icons.Activity/> Recent Activity
+          ))}</div>
+        ) : (
+          <div className="empty-state" style={{padding:'32px 24px'}}>
+            <span className="empty-icon">📋</span>
+            <div className="empty-title">No activity yet</div>
+            <div className="empty-sub">Start by adding a connection and browsing files</div>
           </div>
-          {stats?.recent_activities?.length > 0 ? (
-            stats.recent_activities.map((a, i) => (
-              <div key={a.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 8px', borderRadius:8, transition:'background 0.15s' }}
-                   onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.03)'}
-                   onMouseLeave={e=>e.currentTarget.style.background=''}>
-                <div style={{ width:32, height:32, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', background: a.status==='success'?'rgba(16,185,129,0.15)':'rgba(239,68,68,0.15)', color:a.status==='success'?'#34d399':'#f87171', flexShrink:0 }}>
-                  <Icons.Activity/>
-                </div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:13, fontWeight:500 }}>
-                    {actionLabel(a.action)}{a.connection_name && <span style={{ color:'var(--muted)' }}> on {a.connection_name}</span>}
-                  </div>
-                  {a.path && <div style={{ fontSize:11, color:'var(--muted)', fontFamily:'monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{a.path}</div>}
-                </div>
-                <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
-                  <span className={`badge ${a.status==='success'?'badge-green':'badge-red'}`}>
-                    {a.status==='success'?'✓':'✕'} {a.status}
-                  </span>
-                  <span style={{ fontSize:11, color:'var(--muted)' }}>{relTime(a.timestamp)}</span>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div style={{ textAlign:'center', padding:'40px 0', color:'var(--muted)' }}>
-              <div style={{ fontSize:36, marginBottom:8 }}>📋</div>
-              <p style={{ margin:0 }}>No recent activity</p>
-              <p style={{ fontSize:12, marginTop:4 }}>Start by adding a connection and browsing files</p>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </Layout>
   );
@@ -620,148 +782,152 @@ function Dashboard() {
 
 // ─── Page: Connections ────────────────────────────────────
 function Connections() {
-  const [conns, setConns] = useState([]);
+  const [conns,   setConns]   = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState(null); // null | 'new' | connection object
+  const [modal,   setModal]   = useState(null);
   const [testing, setTesting] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name:'', protocol:'sftp', host:'', port:22, username:'', password:'', private_key:'' });
+  const [saving,  setSaving]  = useState(false);
+  const [form,    setForm]    = useState({name:'',protocol:'sftp',host:'',port:22,username:'',password:'',private_key:''});
 
-  const load = () => api.get('/connections').then(setConns).catch(()=>toast.error('Failed to load')).finally(()=>setLoading(false));
-  useEffect(()=>{ load(); }, []);
+  const load = useCallback(()=>api.get('/connections').then(setConns).finally(()=>setLoading(false)),[]);
+  useEffect(()=>{ load(); },[]);
 
-  const openNew = () => { setForm({ name:'', protocol:'sftp', host:'', port:22, username:'', password:'', private_key:'' }); setModal('new'); };
-  const openEdit = c => { setForm({ name:c.name, protocol:c.protocol, host:c.host, port:c.port, username:c.username, password:'', private_key:'' }); setModal(c); };
+  const openNew  = ()=>{ setForm({name:'',protocol:'sftp',host:'',port:22,username:'',password:'',private_key:''}); setModal('new'); };
+  const openEdit = c=>{ setForm({name:c.name,protocol:c.protocol,host:c.host,port:c.port,username:c.username,password:'',private_key:''}); setModal(c); };
+  const F = (k,v) => setForm(f=>({...f,[k]:v}));
 
   const save = async e => {
     e.preventDefault(); setSaving(true);
-    const data = { ...form }; if(!data.password) delete data.password; if(!data.private_key) delete data.private_key;
+    const d={...form}; if(!d.password) delete d.password; if(!d.private_key) delete d.private_key;
     try {
-      if (modal === 'new') { await api.post('/connections', data); toast.success('Connection created'); }
-      else { await api.put(`/connections/${modal.id}`, data); toast.success('Connection updated'); }
+      if(modal==='new'){ await api.post('/connections',d); toast.success('Connection created'); }
+      else { await api.put(`/connections/${modal.id}`,d); toast.success('Connection updated'); }
       setModal(null); load();
-    } catch(err) { toast.error(err.message); }
-    finally { setSaving(false); }
+    } catch(err){ toast.error(err.message); }
+    finally{ setSaving(false); }
   };
-
-  const del = async id => {
-    if (!confirm('Delete this connection?')) return;
-    try { await api.delete(`/connections/${id}`); toast.success('Deleted'); load(); }
-    catch(err) { toast.error(err.message); }
+  const del = async id=>{
+    if(!confirm('Delete this connection?')) return;
+    try{ await api.delete(`/connections/${id}`); toast.success('Deleted'); load(); }
+    catch(err){ toast.error(err.message); }
   };
-
-  const test = async id => {
+  const test = async id=>{
     setTesting(id);
-    try { await api.post(`/connections/${id}/test`); toast.success('Connection successful!'); }
-    catch(err) { toast.error(err.message || 'Connection failed'); }
-    finally { setTesting(null); }
+    try{ await api.post(`/connections/${id}/test`); toast.success('Connection successful!'); }
+    catch(err){ toast.error(err.message||'Connection failed'); }
+    finally{ setTesting(null); }
   };
-
-  const F = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   return (
     <Layout>
-      <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-          <div>
-            <h1 style={{ fontSize:26, fontWeight:700, margin:0 }}>Connections</h1>
-            <p style={{ color:'var(--muted)', fontSize:13, marginTop:4 }}>Manage your FTP and SFTP server connections</p>
-          </div>
-          <button className="btn btn-primary" onClick={openNew}><Icons.Plus/> New Connection</button>
+      <div className="page-header">
+        <div>
+          <div className="page-title">Connections</div>
+          <div className="page-sub">Manage your FTP and SFTP server connections</div>
         </div>
+        <button className="btn btn-primary" onClick={openNew}><I.Plus/> New Connection</button>
+      </div>
 
-        {loading ? <div style={{ textAlign:'center', padding:40, color:'var(--muted)' }}><Spinner size={28}/></div>
-        : conns.length === 0 ? (
-          <div className="bento-card" style={{ textAlign:'center', padding:'48px 24px' }}>
-            <div style={{ fontSize:48, marginBottom:12 }}>🖥️</div>
-            <h3 style={{ fontWeight:600, margin:'0 0 8px' }}>No connections yet</h3>
-            <p style={{ color:'var(--muted)', marginBottom:20 }}>Add your first FTP or SFTP server</p>
-            <button className="btn btn-primary" onClick={openNew}><Icons.Plus/> Add Connection</button>
-          </div>
-        ) : (
-          conns.map(c => (
-            <div key={c.id} className="bento-card" style={{ padding:'20px 24px' }}>
-              <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
-                <div style={{ display:'flex', alignItems:'flex-start', gap:14 }}>
-                  <div style={{ width:44, height:44, borderRadius:12, background:'var(--secondary)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                    <Icons.Server/>
+      {loading ? <div style={{textAlign:'center',padding:48}}><Spinner size={28}/></div>
+      : conns.length===0 ? (
+        <div className="card"><div className="empty-state">
+          <span className="empty-icon">🖥️</span>
+          <div className="empty-title">No connections yet</div>
+          <div className="empty-sub">Add your first FTP or SFTP server to start managing files remotely</div>
+          <button className="btn btn-primary" onClick={openNew}><I.Plus/> Add Connection</button>
+        </div></div>
+      ) : (
+        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+          {conns.map(c=>(
+            <div key={c.id} className="conn-card">
+              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+                <div style={{display:'flex',gap:14,alignItems:'flex-start',flex:1,minWidth:0}}>
+                  <div style={{width:46,height:46,borderRadius:12,background:'linear-gradient(135deg,var(--primary-bg),rgba(124,92,252,0.05))',border:'1px solid var(--primary-border)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <I.Server/>
                   </div>
-                  <div>
-                    <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:4 }}>
-                      <span style={{ fontSize:16, fontWeight:600 }}>{c.name}</span>
-                      <span className={`proto-${c.protocol}`}>{c.protocol}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:4}}>
+                      <span style={{fontSize:15,fontWeight:700}}>{c.name}</span>
+                      <span className={`proto proto-${c.protocol}`}>{c.protocol}</span>
                     </div>
-                    <div style={{ fontSize:13, color:'var(--muted)', fontFamily:'monospace', marginBottom:8 }}>
+                    <div style={{fontSize:12,color:'var(--muted2)',fontFamily:'monospace',marginBottom:10}}>
                       {c.username}@{c.host}:{c.port}
                     </div>
-                    <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-                      <code style={{ fontSize:11, background:'var(--secondary)', padding:'2px 8px', borderRadius:4, color:'var(--muted)' }}>ID: {c.id}</code>
-                      <button className="btn btn-ghost btn-icon" style={{ padding:'2px 4px' }} onClick={() => { navigator.clipboard.writeText(c.id); toast.success('ID copied!'); }}>
-                        <Icons.Copy/>
+                    <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
+                      <span style={{fontSize:11,background:'rgba(255,255,255,0.05)',border:'1px solid var(--border)',padding:'2px 8px',borderRadius:6,fontFamily:'monospace',color:'var(--muted)'}}>
+                        {c.id.slice(0,8)}…
+                      </span>
+                      <button className="btn btn-ghost" style={{padding:'1px 6px',fontSize:11,borderRadius:6}}
+                        onClick={()=>{ navigator.clipboard.writeText(c.id); toast.success('ID copied!'); }}>
+                        <I.Copy/> Copy ID
                       </button>
-                      {c.has_password && <span className="badge badge-blue">Password Auth</span>}
-                      {c.has_private_key && <span className="badge badge-purple">Key Auth</span>}
-                      {c.last_used && <span style={{ fontSize:11, color:'var(--muted)' }}>Last used {relTime(c.last_used)}</span>}
+                      {c.has_password   && <span className="badge badge-blue">Password Auth</span>}
+                      {c.has_private_key&& <span className="badge badge-purple">Key Auth</span>}
+                      {c.last_used      && <span style={{fontSize:11,color:'var(--muted)'}}>Last used {relTime(c.last_used)}</span>}
                     </div>
                   </div>
                 </div>
-                <div style={{ display:'flex', gap:8, flexShrink:0 }}>
-                  <button className="btn btn-secondary btn-sm" onClick={() => test(c.id)} disabled={testing===c.id}>
-                    {testing===c.id ? <Spinner/> : '⚡'} Test
+                <div style={{display:'flex',gap:7,flexShrink:0,alignItems:'center'}}>
+                  <button className="btn btn-secondary btn-sm" onClick={()=>test(c.id)} disabled={!!testing}>
+                    {testing===c.id?<Spinner/>:'⚡'} Test
                   </button>
-                  <button className="btn btn-secondary btn-sm" onClick={() => openEdit(c)}><Icons.Edit/></button>
-                  <button className="btn btn-danger btn-sm" onClick={() => del(c.id)}><Icons.Trash/></button>
+                  <button className="btn btn-secondary btn-icon btn-sm" onClick={()=>openEdit(c)} title="Edit"><I.Edit/></button>
+                  <button className="btn btn-danger btn-icon btn-sm" onClick={()=>del(c.id)} title="Delete"><I.Trash/></button>
                 </div>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {modal && (
-        <div className="modal-bg" onClick={()=>setModal(null)}>
-          <div className="modal-box" onClick={e=>e.stopPropagation()}>
-            <div className="modal-title">{modal==='new' ? 'New Connection' : 'Edit Connection'}</div>
-            <div className="modal-desc">{modal==='new' ? 'Enter FTP or SFTP server details' : 'Update the connection details'}</div>
+        <div className="modal-overlay" onClick={()=>setModal(null)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-title">{modal==='new'?'New Connection':'Edit Connection'}</div>
+            <div className="modal-desc">{modal==='new'?'Enter your FTP or SFTP server details':'Update the connection details below'}</div>
             <form onSubmit={save}>
-              <div style={{ marginBottom:12 }}>
-                <label>Connection Name</label>
-                <input placeholder="My Server" value={form.name} onChange={e=>F('name',e.target.value)} required/>
+              <div className="form-group">
+                <label className="form-label">Connection Name</label>
+                <input className="input" placeholder="My Production Server" value={form.name} onChange={e=>F('name',e.target.value)} required autoFocus/>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:12 }}>
-                <div>
-                  <label>Protocol</label>
-                  <select value={form.protocol} onChange={e=>{ F('protocol',e.target.value); F('port',e.target.value==='sftp'?22:21); }}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                <div className="form-group">
+                  <label className="form-label">Protocol</label>
+                  <select className="input" value={form.protocol} onChange={e=>{ F('protocol',e.target.value); F('port',e.target.value==='sftp'?22:21); }}>
                     <option value="sftp">SFTP</option>
                     <option value="ftp">FTP</option>
                   </select>
                 </div>
-                <div>
-                  <label>Port</label>
-                  <input type="number" value={form.port} onChange={e=>F('port',parseInt(e.target.value))} required/>
+                <div className="form-group">
+                  <label className="form-label">Port</label>
+                  <input className="input" type="number" value={form.port} onChange={e=>F('port',parseInt(e.target.value))} required/>
                 </div>
               </div>
-              <div style={{ marginBottom:12 }}>
-                <label>Host</label>
-                <input placeholder="ftp.example.com" value={form.host} onChange={e=>F('host',e.target.value)} required/>
+              <div className="form-group">
+                <label className="form-label">Host</label>
+                <input className="input" placeholder="ftp.example.com" value={form.host} onChange={e=>F('host',e.target.value)} required/>
               </div>
-              <div style={{ marginBottom:12 }}>
-                <label>Username</label>
-                <input placeholder="user" value={form.username} onChange={e=>F('username',e.target.value)} required/>
+              <div className="form-group">
+                <label className="form-label">Username</label>
+                <input className="input" placeholder="user" value={form.username} onChange={e=>F('username',e.target.value)} required/>
               </div>
-              <div style={{ marginBottom:12 }}>
-                <label>Password {modal!=='new' && <span style={{ color:'var(--muted)', fontSize:11 }}>(leave empty to keep current)</span>}</label>
-                <input type="password" placeholder="••••••••" value={form.password} onChange={e=>F('password',e.target.value)}/>
+              <div className="form-group">
+                <label className="form-label">
+                  Password {modal!=='new'&&<span style={{color:'var(--muted)',fontWeight:400,textTransform:'none',fontSize:11}}>(leave blank to keep current)</span>}
+                </label>
+                <input className="input" type="password" placeholder="••••••••" value={form.password} onChange={e=>F('password',e.target.value)}/>
               </div>
-              {form.protocol === 'sftp' && (
-                <div style={{ marginBottom:12 }}>
-                  <label>Private Key <span style={{ color:'var(--muted)', fontSize:11 }}>(optional, PEM format)</span></label>
-                  <textarea rows="3" placeholder="-----BEGIN RSA PRIVATE KEY-----" value={form.private_key} onChange={e=>F('private_key',e.target.value)} style={{ fontFamily:'monospace', fontSize:11 }}/>
+              {form.protocol==='sftp' && (
+                <div className="form-group">
+                  <label className="form-label">Private Key <span style={{color:'var(--muted)',fontWeight:400,textTransform:'none',fontSize:11}}>(optional, PEM format)</span></label>
+                  <textarea className="input" rows="3" placeholder="-----BEGIN RSA PRIVATE KEY-----" value={form.private_key} onChange={e=>F('private_key',e.target.value)} style={{fontFamily:'monospace',fontSize:11}}/>
                 </div>
               )}
-              <div style={{ display:'flex', gap:8, justifyContent:'flex-end', marginTop:20 }}>
-                <button type="button" className="btn btn-secondary" onClick={()=>setModal(null)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>{saving?<Spinner/>:null} {modal==='new'?'Create':'Update'}</button>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving?<Spinner/>:null} {modal==='new'?'Create Connection':'Update Connection'}
+                </button>
               </div>
             </form>
           </div>
@@ -773,183 +939,187 @@ function Connections() {
 
 // ─── Page: File Browser ───────────────────────────────────
 function FileBrowser() {
-  const [conns, setConns] = useState([]);
-  const [selConn, setSelConn] = useState(null);
-  const [path, setPath] = useState('/');
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [browsing, setBrowsing] = useState(false);
-  const [renameModal, setRenameModal] = useState(null);
-  const [mkdirModal, setMkdirModal] = useState(false);
-  const [newName, setNewName] = useState('');
+  const [conns,  setConns]  = useState([]);
+  const [conn,   setConn]   = useState(null);
+  const [path,   setPath]   = useState('/');
+  const [files,  setFiles]  = useState([]);
+  const [loading,setLoading]= useState(true);
+  const [busy,   setBusy]   = useState(false);
+  const [renaming,setRenaming]=useState(null);
+  const [mkdir,  setMkdir]  = useState(false);
+  const [newName,setNewName]= useState('');
   const [newDir, setNewDir] = useState('');
   const [saving, setSaving] = useState(false);
   const fileRef = useRef();
 
-  useEffect(() => {
-    api.get('/connections').then(cs => { setConns(cs); if(cs.length>0){setSelConn(cs[0]);} }).finally(()=>setLoading(false));
-  }, []);
+  useEffect(()=>{
+    api.get('/connections').then(cs=>{ setConns(cs); if(cs.length>0) setConn(cs[0]); }).finally(()=>setLoading(false));
+  },[]);
 
-  const browse = useCallback(async (connId, p) => {
-    setBrowsing(true);
-    try { const r = await api.get(`/files/${connId}/list?path=${encodeURIComponent(p)}`); setFiles(r.items); setPath(r.path); }
-    catch(err) { toast.error(err.message || 'Failed to list'); }
-    finally { setBrowsing(false); }
-  }, []);
+  const browse = useCallback(async(connId,p)=>{
+    setBusy(true);
+    try{ const r=await api.get(`/files/${connId}/list?path=${encodeURIComponent(p)}`); setFiles(r.items); setPath(r.path); }
+    catch(err){ toast.error(err.message||'Failed to list directory'); }
+    finally{ setBusy(false); }
+  },[]);
 
-  useEffect(() => { if(selConn) browse(selConn.id, '/'); }, [selConn]);
+  useEffect(()=>{ if(conn) browse(conn.id,'/'); },[conn]);
 
-  const nav = p => selConn && browse(selConn.id, p);
+  const nav = p => conn && browse(conn.id, p);
 
-  const download = async item => {
-    try {
-      const blob = await apiFetch('GET', `/files/${selConn.id}/download?path=${encodeURIComponent(item.path)}`);
-      const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  const doDownload = async item=>{
+    try{
+      const blob = await apiFetch('GET',`/files/${conn.id}/download?path=${encodeURIComponent(item.path)}`);
+      const url=URL.createObjectURL(blob); const a=document.createElement('a');
       a.href=url; a.download=item.name; document.body.appendChild(a); a.click();
       URL.revokeObjectURL(url); a.remove(); toast.success('Download started');
-    } catch(err) { toast.error('Failed to download'); }
+    } catch{ toast.error('Download failed'); }
   };
 
-  const del = async item => {
+  const doDelete = async item=>{
     if(!confirm(`Delete "${item.name}"?`)) return;
-    try {
-      if(item.type==='directory') await api.delete(`/files/${selConn.id}/rmdir?path=${encodeURIComponent(item.path)}`);
-      else await api.delete(`/files/${selConn.id}/delete?path=${encodeURIComponent(item.path)}`);
-      toast.success('Deleted'); browse(selConn.id, path);
-    } catch(err) { toast.error(err.message); }
+    try{
+      if(item.type==='directory') await api.delete(`/files/${conn.id}/rmdir?path=${encodeURIComponent(item.path)}`);
+      else await api.delete(`/files/${conn.id}/delete?path=${encodeURIComponent(item.path)}`);
+      toast.success('Deleted'); browse(conn.id, path);
+    }catch(err){ toast.error(err.message); }
   };
 
-  const rename = async e => {
-    e.preventDefault(); if(!renameModal||!newName) return; setSaving(true);
-    const newPath = joinPath(parentPath(renameModal.path), newName);
-    try {
-      await api.post(`/files/${selConn.id}/rename?old_path=${encodeURIComponent(renameModal.path)}&new_path=${encodeURIComponent(newPath)}`);
-      toast.success('Renamed'); setRenameModal(null); browse(selConn.id, path);
-    } catch(err) { toast.error(err.message); }
-    finally { setSaving(false); }
+  const doRename = async e=>{
+    e.preventDefault(); if(!renaming||!newName) return; setSaving(true);
+    const np = joinPath(parentPath(renaming.path), newName);
+    try{
+      await api.post(`/files/${conn.id}/rename?old_path=${encodeURIComponent(renaming.path)}&new_path=${encodeURIComponent(np)}`);
+      toast.success('Renamed'); setRenaming(null); browse(conn.id, path);
+    }catch(err){ toast.error(err.message); }
+    finally{ setSaving(false); }
   };
 
-  const mkdir = async e => {
+  const doMkdir = async e=>{
     e.preventDefault(); if(!newDir) return; setSaving(true);
-    try {
-      await api.post(`/files/${selConn.id}/mkdir?path=${encodeURIComponent(joinPath(path,newDir))}`);
-      toast.success('Directory created'); setMkdirModal(false); setNewDir(''); browse(selConn.id, path);
-    } catch(err) { toast.error(err.message); }
-    finally { setSaving(false); }
+    try{
+      await api.post(`/files/${conn.id}/mkdir?path=${encodeURIComponent(joinPath(path,newDir))}`);
+      toast.success('Directory created'); setMkdir(false); setNewDir(''); browse(conn.id, path);
+    }catch(err){ toast.error(err.message); }
+    finally{ setSaving(false); }
   };
 
-  const upload = async e => {
-    const file = e.target.files?.[0]; if(!file) return;
-    const fd = new FormData(); fd.append('file', file);
-    try {
-      await api.postFile(`/files/${selConn.id}/upload?path=${encodeURIComponent(path)}`, fd);
-      toast.success('Uploaded'); browse(selConn.id, path);
-    } catch(err) { toast.error(err.message); }
-    if(fileRef.current) fileRef.current.value = '';
+  const doUpload = async e=>{
+    const file=e.target.files?.[0]; if(!file) return;
+    const fd=new FormData(); fd.append('file',file);
+    try{
+      await api.postFile(`/files/${conn.id}/upload?path=${encodeURIComponent(path)}`,fd);
+      toast.success('Uploaded'); browse(conn.id, path);
+    }catch(err){ toast.error(err.message); }
+    if(fileRef.current) fileRef.current.value='';
   };
 
   const pathParts = path.split('/').filter(Boolean);
+  const sorted = [...files].sort((a,b)=>{ if(a.type!==b.type) return a.type==='directory'?-1:1; return a.name.localeCompare(b.name); });
 
   return (
     <Layout>
-      <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize:26, fontWeight:700, margin:0 }}>File Browser</h1>
-          <p style={{ color:'var(--muted)', fontSize:13, marginTop:4 }}>Browse and manage files on your remote servers</p>
+          <div className="page-title">File Browser</div>
+          <div className="page-sub">Browse and manage files on your remote servers</div>
         </div>
-
-        {loading ? <div style={{ textAlign:'center', padding:40 }}><Spinner size={28}/></div>
-        : conns.length===0 ? (
-          <div className="bento-card" style={{ textAlign:'center', padding:'48px 24px' }}>
-            <div style={{ fontSize:48, marginBottom:12 }}>🖥️</div>
-            <h3 style={{ fontWeight:600, margin:'0 0 8px' }}>No connections available</h3>
-            <p style={{ color:'var(--muted)', marginBottom:20 }}>Add a connection first</p>
-            <Link to="/connections"><button className="btn btn-primary">Add Connection</button></Link>
-          </div>
-        ) : (
-          <>
-            {/* Toolbar */}
-            <div className="bento-card" style={{ padding:14 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-                <Icons.Server/>
-                <select value={selConn?.id||''} onChange={e=>{const c=conns.find(x=>x.id===e.target.value);setSelConn(c);}} style={{ flex:1, minWidth:160 }}>
-                  {conns.map(c=><option key={c.id} value={c.id}>{c.name} ({c.protocol})</option>)}
-                </select>
-                <button className="btn btn-secondary btn-sm" onClick={()=>browse(selConn.id,path)} disabled={browsing}>
-                  {browsing?<Spinner/>:<Icons.RefreshCw/>}
-                </button>
-                <button className="btn btn-secondary btn-sm" onClick={()=>setMkdirModal(true)}><Icons.FolderPlus/> <span style={{display:'none'}} className="sm:inline">New Folder</span></button>
-                <button className="btn btn-primary btn-sm" onClick={()=>fileRef.current?.click()}><Icons.Upload/> <span style={{display:'none'}} className="sm:inline">Upload</span></button>
-                <input ref={fileRef} type="file" style={{display:'none'}} onChange={upload}/>
-              </div>
-            </div>
-
-            {/* Breadcrumb */}
-            <div style={{ display:'flex', alignItems:'center', gap:4, fontSize:13, overflowX:'auto', paddingBottom:4 }}>
-              <button className="btn btn-ghost btn-sm btn-icon" onClick={()=>nav('/')}><Icons.Home/></button>
-              <Icons.ChevronRight/>
-              {pathParts.map((p,i)=>(
-                <React.Fragment key={i}>
-                  <button className="btn btn-ghost btn-sm" onClick={()=>nav('/'+pathParts.slice(0,i+1).join('/'))}>{p}</button>
-                  {i<pathParts.length-1&&<Icons.ChevronRight/>}
-                </React.Fragment>
-              ))}
-            </div>
-
-            {/* File list */}
-            <div className="bento-card" style={{ padding:0, overflow:'hidden' }}>
-              {path!=='/' && (
-                <div className="file-row" onClick={()=>nav(parentPath(path))}>
-                  <Icons.ChevronUp/> <span style={{ color:'var(--muted)' }}>..</span>
-                </div>
-              )}
-              {browsing ? (
-                <div style={{ textAlign:'center', padding:40, color:'var(--muted)' }}><Spinner size={28}/></div>
-              ) : files.length===0 ? (
-                <div style={{ textAlign:'center', padding:40, color:'var(--muted)' }}>
-                  <div style={{ fontSize:36 }}>📂</div><p>Directory is empty</p>
-                </div>
-              ) : (
-                [...files].sort((a,b)=>{
-                  if(a.type!==b.type) return a.type==='directory'?-1:1;
-                  return a.name.localeCompare(b.name);
-                }).map(item => (
-                  <div key={item.path} className="file-row" onClick={()=>item.type==='directory'&&nav(item.path)}
-                       style={{ cursor: item.type==='directory'?'pointer':'default' }}>
-                    <div style={{ width:34, height:34, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, background:item.type==='directory'?'rgba(245,158,11,0.15)':'var(--secondary)', flexShrink:0 }}>
-                      {fileIcon(item.type, item.name)}
-                    </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:13, fontWeight:500 }}>{item.name}</div>
-                      <div style={{ fontSize:11, color:'var(--muted)', display:'flex', gap:12, marginTop:2 }}>
-                        {item.size!=null && <span>{formatBytes(item.size)}</span>}
-                        {item.modified && <span>{relTime(item.modified)}</span>}
-                        {item.permissions && <span style={{ fontFamily:'monospace' }}>{item.permissions}</span>}
-                      </div>
-                    </div>
-                    <div style={{ display:'flex', gap:6, opacity:0 }} className="file-actions" onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0}>
-                      {item.type==='file' && <button className="btn btn-secondary btn-sm btn-icon" onClick={e=>{e.stopPropagation();download(item);}}><Icons.Download/></button>}
-                      <button className="btn btn-secondary btn-sm btn-icon" onClick={e=>{e.stopPropagation();setRenameModal(item);setNewName(item.name);}}><Icons.Edit/></button>
-                      <button className="btn btn-danger btn-sm btn-icon" onClick={e=>{e.stopPropagation();del(item);}}><Icons.Trash/></button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </>
-        )}
       </div>
 
-      {/* Rename modal */}
-      {renameModal && (
-        <div className="modal-bg" onClick={()=>setRenameModal(null)}>
-          <div className="modal-box" onClick={e=>e.stopPropagation()}>
+      {loading ? <div style={{textAlign:'center',padding:48}}><Spinner size={28}/></div>
+      : conns.length===0 ? (
+        <div className="card"><div className="empty-state">
+          <span className="empty-icon">🖥️</span>
+          <div className="empty-title">No connections available</div>
+          <div className="empty-sub">Add a connection first to browse files</div>
+          <Link to="/connections"><button className="btn btn-primary">Add Connection</button></Link>
+        </div></div>
+      ) : (
+        <>
+          {/* Toolbar */}
+          <div className="card card-p" style={{marginBottom:14}}>
+            <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,flex:'1 1 200px',minWidth:0}}>
+                <I.Server/>
+                <select className="input" style={{flex:1}} value={conn?.id||''} onChange={e=>{ const c=conns.find(x=>x.id===e.target.value); setConn(c); }}>
+                  {conns.map(c=><option key={c.id} value={c.id}>{c.name} ({c.protocol.toUpperCase()})</option>)}
+                </select>
+              </div>
+              <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>
+                <button className="btn btn-secondary btn-sm" onClick={()=>browse(conn.id,path)} disabled={busy}>
+                  {busy?<Spinner/>:<I.Refresh/>}
+                </button>
+                <button className="btn btn-secondary btn-sm" onClick={()=>setMkdir(true)}><I.FolderPlus/> New Folder</button>
+                <button className="btn btn-primary btn-sm" onClick={()=>fileRef.current?.click()}><I.Upload/> Upload</button>
+                <input ref={fileRef} type="file" style={{display:'none'}} onChange={doUpload}/>
+              </div>
+            </div>
+          </div>
+
+          {/* Breadcrumb */}
+          <div style={{display:'flex',alignItems:'center',gap:3,marginBottom:12,fontSize:12,overflowX:'auto',paddingBottom:2}}>
+            <button className="btn btn-ghost btn-sm btn-icon" onClick={()=>nav('/')} title="Root"><I.Home/></button>
+            {pathParts.map((p,i)=>(
+              <React.Fragment key={i}>
+                <span style={{color:'var(--muted)',flexShrink:0}}><I.Right/></span>
+                <button className="btn btn-ghost btn-sm" onClick={()=>nav('/'+pathParts.slice(0,i+1).join('/'))}
+                        style={{color:i===pathParts.length-1?'var(--text)':'var(--muted2)',fontWeight:i===pathParts.length-1?600:400}}>
+                  {p}
+                </button>
+              </React.Fragment>
+            ))}
+          </div>
+
+          {/* Files */}
+          <div className="card" style={{overflow:'hidden'}}>
+            {path!=='/' && (
+              <div className="file-row" style={{cursor:'pointer'}} onClick={()=>nav(parentPath(path))}>
+                <div className="file-icon-wrap" style={{background:'rgba(255,255,255,0.04)'}}><I.Up/></div>
+                <span style={{color:'var(--muted)',fontStyle:'italic',fontSize:13}}>.. Parent directory</span>
+              </div>
+            )}
+            {busy ? (
+              <div style={{textAlign:'center',padding:48}}><Spinner size={24}/></div>
+            ) : sorted.length===0 ? (
+              <div className="empty-state" style={{padding:'40px 24px'}}>
+                <span className="empty-icon" style={{fontSize:32}}>📂</span>
+                <div className="empty-title" style={{fontSize:14}}>Empty directory</div>
+              </div>
+            ) : sorted.map(item=>(
+              <div key={item.path} className="file-row" style={{cursor:item.type==='directory'?'pointer':'default'}}
+                   onClick={()=>item.type==='directory'&&nav(item.path)}>
+                <div className="file-icon-wrap" style={{background:item.type==='directory'?'var(--amber-bg)':'rgba(255,255,255,0.04)',fontSize:18}}>
+                  {fileEmoji(item.type,item.name)}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
+                  <div style={{fontSize:11,color:'var(--muted)',display:'flex',gap:12,marginTop:2,flexWrap:'wrap'}}>
+                    {item.size!=null&&<span>{formatBytes(item.size)}</span>}
+                    {item.modified&&<span>{relTime(item.modified)}</span>}
+                    {item.permissions&&<span style={{fontFamily:'monospace'}}>{item.permissions}</span>}
+                  </div>
+                </div>
+                <div className="file-actions" style={{display:'flex',gap:5,opacity:0,transition:'opacity 0.15s'}}
+                     onMouseEnter={e=>{ e.currentTarget.style.opacity=1; }} onMouseLeave={e=>{ e.currentTarget.style.opacity=0; }}>
+                  {item.type==='file'&&<button className="btn btn-secondary btn-icon btn-sm" onClick={e=>{e.stopPropagation();doDownload(item);}} title="Download"><I.Download/></button>}
+                  <button className="btn btn-secondary btn-icon btn-sm" onClick={e=>{e.stopPropagation();setRenaming(item);setNewName(item.name);}} title="Rename"><I.Edit/></button>
+                  <button className="btn btn-danger btn-icon btn-sm" onClick={e=>{e.stopPropagation();doDelete(item);}} title="Delete"><I.Trash/></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {renaming && (
+        <div className="modal-overlay" onClick={()=>setRenaming(null)}>
+          <div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:380}}>
             <div className="modal-title">Rename</div>
-            <div className="modal-desc">Enter a new name for "{renameModal.name}"</div>
-            <form onSubmit={rename}>
-              <div style={{ marginBottom:16 }}><label>New Name</label><input value={newName} onChange={e=>setNewName(e.target.value)} autoFocus/></div>
-              <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-                <button type="button" className="btn btn-secondary" onClick={()=>setRenameModal(null)}>Cancel</button>
+            <div className="modal-desc">Enter a new name for "{renaming.name}"</div>
+            <form onSubmit={doRename}>
+              <div className="form-group"><label className="form-label">New Name</label><input className="input" value={newName} onChange={e=>setNewName(e.target.value)} autoFocus/></div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost" onClick={()=>setRenaming(null)}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>{saving?<Spinner/>:null} Rename</button>
               </div>
             </form>
@@ -957,16 +1127,15 @@ function FileBrowser() {
         </div>
       )}
 
-      {/* Mkdir modal */}
-      {mkdirModal && (
-        <div className="modal-bg" onClick={()=>setMkdirModal(false)}>
-          <div className="modal-box" onClick={e=>e.stopPropagation()}>
+      {mkdir && (
+        <div className="modal-overlay" onClick={()=>setMkdir(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:380}}>
             <div className="modal-title">Create Directory</div>
             <div className="modal-desc">Enter a name for the new directory</div>
-            <form onSubmit={mkdir}>
-              <div style={{ marginBottom:16 }}><label>Directory Name</label><input placeholder="new-folder" value={newDir} onChange={e=>setNewDir(e.target.value)} autoFocus/></div>
-              <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-                <button type="button" className="btn btn-secondary" onClick={()=>setMkdirModal(false)}>Cancel</button>
+            <form onSubmit={doMkdir}>
+              <div className="form-group"><label className="form-label">Directory Name</label><input className="input" placeholder="new-folder" value={newDir} onChange={e=>setNewDir(e.target.value)} autoFocus/></div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost" onClick={()=>setMkdir(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>{saving?<Spinner/>:null} Create</button>
               </div>
             </form>
@@ -979,111 +1148,111 @@ function FileBrowser() {
 
 // ─── Page: API Keys ───────────────────────────────────────
 function APIKeys() {
-  const [keys, setKeys] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState(false);
-  const [newKeyModal, setNewKeyModal] = useState(null);
-  const [form, setForm] = useState({ name:'', expires_in_days:'30' });
+  const [keys,   setKeys]   = useState([]);
+  const [loading,setLoading]= useState(true);
+  const [modal,  setModal]  = useState(false);
+  const [newKey, setNewKey] = useState(null);
+  const [form,   setForm]   = useState({name:'',expires_in_days:'30'});
   const [saving, setSaving] = useState(false);
 
-  const load = () => api.get('/api-keys').then(setKeys).finally(()=>setLoading(false));
-  useEffect(()=>{ load(); }, []);
+  const load = useCallback(()=>api.get('/api-keys').then(setKeys).finally(()=>setLoading(false)),[]);
+  useEffect(()=>{ load(); },[]);
 
-  const create = async e => {
+  const create = async e=>{
     e.preventDefault(); setSaving(true);
-    try {
-      const data = await api.post('/api-keys', { name:form.name, expires_in_days:form.expires_in_days==='never'?null:parseInt(form.expires_in_days) });
-      setModal(false); setNewKeyModal(data); setForm({ name:'', expires_in_days:'30' }); load();
-    } catch(err) { toast.error(err.message); }
-    finally { setSaving(false); }
+    try{
+      const d = await api.post('/api-keys',{name:form.name,expires_in_days:form.expires_in_days==='never'?null:parseInt(form.expires_in_days)});
+      setModal(false); setNewKey(d); setForm({name:'',expires_in_days:'30'}); load();
+    }catch(err){ toast.error(err.message); }
+    finally{ setSaving(false); }
   };
 
-  const revoke = async id => {
+  const revoke = async id=>{
     if(!confirm('Revoke this API key? This cannot be undone.')) return;
-    try { await api.delete(`/api-keys/${id}`); toast.success('API key revoked'); load(); }
-    catch(err) { toast.error(err.message); }
+    try{ await api.delete(`/api-keys/${id}`); toast.success('API key revoked'); load(); }
+    catch(err){ toast.error(err.message); }
   };
 
-  const isExpired = d => d && new Date(d) < new Date();
+  const isExpired = d => d && new Date(d)<new Date();
 
   return (
     <Layout>
-      <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-          <div>
-            <h1 style={{ fontSize:26, fontWeight:700, margin:0 }}>API Keys</h1>
-            <p style={{ color:'var(--muted)', fontSize:13, marginTop:4 }}>Generate keys for programmatic access</p>
-          </div>
-          <button className="btn btn-primary" onClick={()=>setModal(true)}><Icons.Plus/> Generate Key</button>
+      <div className="page-header">
+        <div>
+          <div className="page-title">API Keys</div>
+          <div className="page-sub">Generate keys for programmatic access to your files</div>
         </div>
+        <button className="btn btn-primary" onClick={()=>setModal(true)}><I.Plus/> Generate Key</button>
+      </div>
 
-        <div className="bento-card" style={{ padding:14, background:'rgba(124,58,237,0.08)', borderColor:'rgba(124,58,237,0.25)' }}>
-          <div style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
-            <div style={{ width:32, height:32, borderRadius:8, background:'rgba(124,58,237,0.2)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Icons.Key/></div>
-            <div>
-              <div style={{ fontSize:13, fontWeight:500 }}>Using API Keys</div>
-              <div style={{ fontSize:12, color:'var(--muted)', marginTop:2 }}>
-                Include your key in the <code style={{ background:'var(--secondary)', padding:'1px 5px', borderRadius:3 }}>X-API-Key</code> header when making requests.
-              </div>
-            </div>
+      <div className="info-box" style={{marginBottom:20}}>
+        <div className="info-box-icon"><I.Key/></div>
+        <div>
+          <div style={{fontSize:13,fontWeight:600,marginBottom:2}}>How to use API Keys</div>
+          <div style={{fontSize:12,color:'var(--muted2)',lineHeight:1.6}}>
+            Add your API key in the <code>X-API-Key</code> header. Keys provide the same file access as your user account without exposing your password.
           </div>
         </div>
+      </div>
 
-        {loading ? <div style={{ textAlign:'center', padding:40 }}><Spinner size={28}/></div>
-        : keys.length===0 ? (
-          <div className="bento-card" style={{ textAlign:'center', padding:'48px 24px' }}>
-            <div style={{ fontSize:48, marginBottom:12 }}>🔑</div>
-            <h3 style={{ fontWeight:600, margin:'0 0 8px' }}>No API keys yet</h3>
-            <p style={{ color:'var(--muted)', marginBottom:20 }}>Generate a key for programmatic access</p>
-            <button className="btn btn-primary" onClick={()=>setModal(true)}><Icons.Plus/> Generate Key</button>
-          </div>
-        ) : (
-          keys.map((k,i) => {
+      {loading ? <div style={{textAlign:'center',padding:48}}><Spinner size={28}/></div>
+      : keys.length===0 ? (
+        <div className="card"><div className="empty-state">
+          <span className="empty-icon">🔑</span>
+          <div className="empty-title">No API keys yet</div>
+          <div className="empty-sub">Generate a key to access your files programmatically from any app or script</div>
+          <button className="btn btn-primary" onClick={()=>setModal(true)}><I.Plus/> Generate Key</button>
+        </div></div>
+      ) : (
+        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+          {keys.map(k=>{
             const expired = isExpired(k.expires_at);
+            const active  = k.is_active && !expired;
             return (
-              <div key={k.id} className="bento-card" style={{ padding:'20px 24px' }}>
-                <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
-                  <div style={{ display:'flex', gap:14 }}>
-                    <div style={{ width:44, height:44, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, background:k.is_active&&!expired?'rgba(16,185,129,0.15)':'var(--secondary)', color:k.is_active&&!expired?'#34d399':'var(--muted)' }}>
-                      <Icons.Key/>
+              <div key={k.id} className="card card-p">
+                <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+                  <div style={{display:'flex',gap:14}}>
+                    <div style={{width:46,height:46,borderRadius:12,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:active?'var(--green-bg)':'rgba(255,255,255,0.04)',border:`1px solid ${active?'var(--green-border)':'var(--border)'}`,color:active?'var(--green)':'var(--muted)'}}>
+                      <I.Key/>
                     </div>
                     <div>
-                      <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:4 }}>
-                        <span style={{ fontSize:16, fontWeight:600 }}>{k.name}</span>
-                        {k.is_active ? (expired ? <span className="badge badge-amber">⚠ Expired</span> : <span className="badge badge-green">✓ Active</span>) : <span className="badge badge-red">Revoked</span>}
+                      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:5}}>
+                        <span style={{fontSize:15,fontWeight:700}}>{k.name}</span>
+                        {k.is_active ? (expired ? <span className="badge badge-amber">⚠ Expired</span> : <span className="badge badge-green">● Active</span>) : <span className="badge badge-red">Revoked</span>}
                       </div>
-                      <div style={{ fontSize:13, fontFamily:'monospace', color:'var(--muted)', marginBottom:8 }}>{k.key_prefix}••••••••••••••••</div>
-                      <div style={{ display:'flex', gap:12, fontSize:11, color:'var(--muted)', flexWrap:'wrap' }}>
-                        <span>Created {formatDate(k.created_at)}</span>
-                        {k.expires_at && <span>Expires {formatDate(k.expires_at)}</span>}
-                        {k.last_used && <span>Last used {relTime(k.last_used)}</span>}
+                      <div style={{fontSize:12,fontFamily:'monospace',color:'var(--muted)',marginBottom:8,letterSpacing:'0.5px'}}>
+                        {k.key_prefix}<span style={{opacity:0.4}}>••••••••••••••••••••••••</span>
+                      </div>
+                      <div style={{display:'flex',gap:14,fontSize:11,color:'var(--muted)',flexWrap:'wrap',alignItems:'center'}}>
+                        <span>Created {fmtDate(k.created_at)}</span>
+                        {k.expires_at && <span style={{display:'flex',alignItems:'center',gap:3}}><I.Clock/> Expires {fmtDate(k.expires_at)}</span>}
+                        {k.last_used  && <span>Last used {relTime(k.last_used)}</span>}
                       </div>
                     </div>
                   </div>
                   {k.is_active && (
-                    <button className="btn btn-danger btn-sm" onClick={()=>revoke(k.id)}><Icons.Trash/> Revoke</button>
+                    <button className="btn btn-danger btn-sm" onClick={()=>revoke(k.id)}><I.Trash/> Revoke</button>
                   )}
                 </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
 
-      {/* Create modal */}
       {modal && (
-        <div className="modal-bg" onClick={()=>setModal(false)}>
-          <div className="modal-box" onClick={e=>e.stopPropagation()}>
+        <div className="modal-overlay" onClick={()=>setModal(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:420}}>
             <div className="modal-title">Generate API Key</div>
-            <div className="modal-desc">Create a new API key for programmatic access</div>
+            <div className="modal-desc">Create a new key for programmatic access</div>
             <form onSubmit={create}>
-              <div style={{ marginBottom:12 }}>
-                <label>Key Name</label>
-                <input placeholder="My Application" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} required/>
+              <div className="form-group">
+                <label className="form-label">Key Name</label>
+                <input className="input" placeholder="My Application" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} required autoFocus/>
               </div>
-              <div style={{ marginBottom:20 }}>
-                <label>Expiration</label>
-                <select value={form.expires_in_days} onChange={e=>setForm(f=>({...f,expires_in_days:e.target.value}))}>
+              <div className="form-group">
+                <label className="form-label">Expiration</label>
+                <select className="input" value={form.expires_in_days} onChange={e=>setForm(f=>({...f,expires_in_days:e.target.value}))}>
                   <option value="7">7 days</option>
                   <option value="30">30 days</option>
                   <option value="90">90 days</option>
@@ -1091,31 +1260,33 @@ function APIKeys() {
                   <option value="never">Never expires</option>
                 </select>
               </div>
-              <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-                <button type="button" className="btn btn-secondary" onClick={()=>setModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>{saving?<Spinner/>:null} Generate</button>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost" onClick={()=>setModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>{saving?<Spinner/>:null} Generate Key</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* New key display */}
-      {newKeyModal && (
-        <div className="modal-bg">
-          <div className="modal-box">
-            <div className="modal-title" style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <span style={{ color:'#34d399' }}>✓</span> API Key Generated
+      {newKey && (
+        <div className="modal-overlay">
+          <div className="modal" style={{maxWidth:440}}>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4}}>
+              <div style={{width:34,height:34,borderRadius:8,background:'var(--green-bg)',border:'1px solid var(--green-border)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--green)'}}>
+                <I.Check/>
+              </div>
+              <div className="modal-title" style={{margin:0}}>Key Generated!</div>
             </div>
-            <div className="modal-desc">Copy your API key now — you won't be able to see it again!</div>
-            <div style={{ background:'var(--secondary)', borderRadius:8, padding:14, fontFamily:'monospace', fontSize:12, wordBreak:'break-all', marginBottom:12 }}>
-              {newKeyModal.api_key}
+            <div className="modal-desc" style={{marginTop:8}}>⚠️ Copy your API key now — you won't be able to see it again!</div>
+            <div style={{background:'rgba(0,0,0,0.4)',border:'1px solid var(--border)',borderRadius:10,padding:14,fontFamily:'monospace',fontSize:12,wordBreak:'break-all',marginBottom:12,color:'#b8c0d4',letterSpacing:'0.3px'}}>
+              {newKey.api_key}
             </div>
-            <button className="btn btn-primary" style={{ width:'100%', justifyContent:'center', marginBottom:12 }}
-              onClick={()=>{ navigator.clipboard.writeText(newKeyModal.api_key); toast.success('Copied!'); }}>
-              <Icons.Copy/> Copy to Clipboard
+            <button className="btn btn-primary" style={{width:'100%',justifyContent:'center',marginBottom:10}}
+              onClick={()=>{ navigator.clipboard.writeText(newKey.api_key); toast.success('Copied to clipboard!'); }}>
+              <I.Copy/> Copy to Clipboard
             </button>
-            <button className="btn btn-secondary" style={{ width:'100%', justifyContent:'center' }} onClick={()=>setNewKeyModal(null)}>Done</button>
+            <button className="btn btn-secondary" style={{width:'100%',justifyContent:'center'}} onClick={()=>setNewKey(null)}>Done</button>
           </div>
         </div>
       )}
@@ -1127,77 +1298,79 @@ function APIKeys() {
 function APIDocs() {
   const [tab, setTab] = useState('files');
   const base = window.location.origin + '/api';
-  const CB = ({ c }) => <pre className="code-block">{c}</pre>;
-  const EP = ({ method, path: p, desc, code }) => {
-    const mc = { GET:'badge-green', POST:'badge-blue', PUT:'badge-amber', DELETE:'badge-red' };
-    return (
-      <div className="bento-card" style={{ marginBottom:12 }}>
-        <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12 }}>
-          <span className={`badge ${mc[method]}`}>{method}</span>
-          <div>
-            <code style={{ fontSize:13 }}>{p}</code>
-            <div style={{ fontSize:12, color:'var(--muted)', marginTop:2 }}>{desc}</div>
-          </div>
+  const CB = ({c}) => <pre className="code-block">{c}</pre>;
+  const methodColors = {GET:'badge-green',POST:'badge-blue',PUT:'badge-amber',DELETE:'badge-red'};
+  const EP = ({method,path:p,desc,code,params}) => (
+    <div className="card card-p" style={{marginBottom:12}}>
+      <div style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:code?14:0}}>
+        <span className={`badge ${methodColors[method]}`} style={{flexShrink:0,fontFamily:'monospace'}}>{method}</span>
+        <div>
+          <code style={{fontSize:13,background:'transparent',padding:0,color:'var(--text)',fontFamily:'"SF Mono","Fira Code",monospace'}}>{p}</code>
+          <div style={{fontSize:12,color:'var(--muted)',marginTop:3}}>{desc}</div>
+          {params && <div style={{marginTop:8,fontSize:12,color:'var(--muted2)'}}><b style={{color:'var(--muted)',fontWeight:600}}>Params:</b> {params}</div>}
         </div>
-        <CB c={code}/>
       </div>
-    );
-  };
-  const tabs = ['files','connections','keys'];
+      {code && <CB c={code}/>}
+    </div>
+  );
   return (
     <Layout>
-      <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize:26, fontWeight:700, margin:0 }}>API Documentation</h1>
-          <p style={{ color:'var(--muted)', fontSize:13, marginTop:4 }}>Interact with your files programmatically</p>
+          <div className="page-title">API Documentation</div>
+          <div className="page-sub">Interact with your files programmatically via HTTP</div>
         </div>
-
-        <div className="bento-card">
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-            <Icons.Key/><div>
-              <div style={{ fontSize:13, fontWeight:600 }}>Authentication</div>
-              <div style={{ fontSize:12, color:'var(--muted)' }}>Use API key in <code style={{ background:'var(--secondary)',padding:'1px 5px',borderRadius:3 }}>X-API-Key</code> header or JWT in <code style={{ background:'var(--secondary)',padding:'1px 5px',borderRadius:3 }}>Authorization: Bearer</code></div>
-            </div>
-          </div>
-          <CB c={`curl "${base}/files/{id}/list?path=/" \\\n  -H "X-API-Key: your_key_here"`}/>
-        </div>
-
-        <div className="bento-card" style={{ padding:'10px 14px', background:'rgba(124,58,237,0.08)', borderColor:'rgba(124,58,237,0.25)' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <Icons.Code/>
-            <span style={{ fontSize:12, fontWeight:500 }}>Base URL: </span>
-            <code style={{ fontSize:12, color:'var(--muted)' }}>{base}</code>
-          </div>
-        </div>
-
-        <div style={{ display:'flex', gap:4, background:'var(--secondary)', borderRadius:10, padding:4 }}>
-          {tabs.map(t => (
-            <button key={t} className={`btn btn-${tab===t?'primary':'ghost'}`} style={{ flex:1, justifyContent:'center', textTransform:'capitalize' }} onClick={()=>setTab(t)}>
-              {t==='files'?'File Ops':t==='connections'?'Connections':'API Keys'}
-            </button>
-          ))}
-        </div>
-
-        {tab==='files' && <>
-          <EP method="GET" path="/files/{id}/list" desc="List directory contents" code={`curl "${base}/files/{id}/list?path=/home/user" \\\n  -H "X-API-Key: your_key"`}/>
-          <EP method="GET" path="/files/{id}/download" desc="Download a file" code={`curl "${base}/files/{id}/download?path=/file.txt" \\\n  -H "X-API-Key: your_key" -o file.txt`}/>
-          <EP method="POST" path="/files/{id}/upload" desc="Upload a file (multipart)" code={`curl -X POST "${base}/files/{id}/upload?path=/home/user" \\\n  -H "X-API-Key: your_key" \\\n  -F "file=@local_file.txt"`}/>
-          <EP method="POST" path="/files/{id}/mkdir" desc="Create a directory" code={`curl -X POST "${base}/files/{id}/mkdir?path=/home/user/newdir" \\\n  -H "X-API-Key: your_key"`}/>
-          <EP method="DELETE" path="/files/{id}/delete" desc="Delete a file" code={`curl -X DELETE "${base}/files/{id}/delete?path=/file.txt" \\\n  -H "X-API-Key: your_key"`}/>
-          <EP method="POST" path="/files/{id}/rename" desc="Rename file or directory" code={`curl -X POST "${base}/files/{id}/rename?old_path=/old.txt&new_path=/new.txt" \\\n  -H "X-API-Key: your_key"`}/>
-        </>}
-        {tab==='connections' && <>
-          <EP method="GET" path="/connections" desc="List all connections" code={`curl "${base}/connections" \\\n  -H "Authorization: Bearer your_token"`}/>
-          <EP method="POST" path="/connections" desc="Create a connection" code={`curl -X POST "${base}/connections" \\\n  -H "Authorization: Bearer your_token" \\\n  -H "Content-Type: application/json" \\\n  -d '{"name":"My Server","protocol":"sftp","host":"ftp.example.com","port":22,"username":"user","password":"secret"}'`}/>
-          <EP method="POST" path="/connections/{id}/test" desc="Test a connection" code={`curl -X POST "${base}/connections/{id}/test" \\\n  -H "Authorization: Bearer your_token"`}/>
-          <EP method="DELETE" path="/connections/{id}" desc="Delete a connection" code={`curl -X DELETE "${base}/connections/{id}" \\\n  -H "Authorization: Bearer your_token"`}/>
-        </>}
-        {tab==='keys' && <>
-          <EP method="GET" path="/api-keys" desc="List API keys" code={`curl "${base}/api-keys" \\\n  -H "Authorization: Bearer your_token"`}/>
-          <EP method="POST" path="/api-keys" desc="Create an API key" code={`curl -X POST "${base}/api-keys" \\\n  -H "Authorization: Bearer your_token" \\\n  -H "Content-Type: application/json" \\\n  -d '{"name":"My App Key","expires_in_days":30}'`}/>
-          <EP method="DELETE" path="/api-keys/{id}" desc="Revoke an API key" code={`curl -X DELETE "${base}/api-keys/{id}" \\\n  -H "Authorization: Bearer your_token"`}/>
-        </>}
       </div>
+
+      {/* Auth */}
+      <div className="card card-p" style={{marginBottom:14}}>
+        <div style={{display:'flex',gap:10,alignItems:'flex-start',marginBottom:14}}>
+          <div style={{width:34,height:34,borderRadius:8,background:'var(--primary-bg)',border:'1px solid var(--primary-border)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><I.Shield/></div>
+          <div>
+            <div style={{fontSize:14,fontWeight:600,marginBottom:3}}>Authentication</div>
+            <div style={{fontSize:12,color:'var(--muted2)',lineHeight:1.6}}>Use an API key in the <code>X-API-Key</code> header, or JWT token in <code>Authorization: Bearer</code></div>
+          </div>
+        </div>
+        <CB c={`curl "${base}/files/{id}/list?path=/" \\\n  -H "X-API-Key: your_api_key_here"`}/>
+      </div>
+
+      {/* Base URL */}
+      <div className="info-box" style={{marginBottom:20}}>
+        <div className="info-box-icon"><I.Hash/></div>
+        <div>
+          <div style={{fontSize:12,fontWeight:600,color:'var(--muted2)'}}>Base URL</div>
+          <code style={{fontSize:13,background:'transparent',padding:0,color:'var(--text)',fontFamily:'monospace'}}>{base}</code>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="tabs" style={{marginBottom:20}}>
+        {[['files','📁 File Operations'],['connections','🖥️ Connections'],['keys','🔑 API Keys']].map(([k,l])=>(
+          <button key={k} className={`tab${tab===k?' active':''}`} onClick={()=>setTab(k)}>{l}</button>
+        ))}
+      </div>
+
+      {tab==='files'&&<>
+        <EP method="GET"    path="/files/{id}/list"    desc="List directory contents" params="path (default: /)" code={`curl "${base}/files/{id}/list?path=/home/user" \\\n  -H "X-API-Key: your_key"`}/>
+        <EP method="GET"    path="/files/{id}/download" desc="Download a file" params="path (required)" code={`curl "${base}/files/{id}/download?path=/file.txt" \\\n  -H "X-API-Key: your_key" -o file.txt`}/>
+        <EP method="POST"   path="/files/{id}/upload"   desc="Upload a file (multipart/form-data)" params="path (required), file (form field)" code={`curl -X POST "${base}/files/{id}/upload?path=/home/user" \\\n  -H "X-API-Key: your_key" \\\n  -F "file=@local_file.txt"`}/>
+        <EP method="POST"   path="/files/{id}/mkdir"    desc="Create a directory" params="path (required)" code={`curl -X POST "${base}/files/{id}/mkdir?path=/newdir" \\\n  -H "X-API-Key: your_key"`}/>
+        <EP method="DELETE" path="/files/{id}/delete"   desc="Delete a file" params="path (required)" code={`curl -X DELETE "${base}/files/{id}/delete?path=/file.txt" \\\n  -H "X-API-Key: your_key"`}/>
+        <EP method="DELETE" path="/files/{id}/rmdir"    desc="Delete a directory" params="path (required)" code={`curl -X DELETE "${base}/files/{id}/rmdir?path=/dir" \\\n  -H "X-API-Key: your_key"`}/>
+        <EP method="POST"   path="/files/{id}/rename"   desc="Rename a file or directory" params="old_path, new_path (both required)" code={`curl -X POST "${base}/files/{id}/rename?old_path=/old.txt&new_path=/new.txt" \\\n  -H "X-API-Key: your_key"`}/>
+      </>}
+      {tab==='connections'&&<>
+        <EP method="GET"    path="/connections"          desc="List all configured server connections" code={`curl "${base}/connections" -H "Authorization: Bearer jwt"`}/>
+        <EP method="POST"   path="/connections"          desc="Create a new server connection" code={`curl -X POST "${base}/connections" \\\n  -H "Authorization: Bearer jwt" \\\n  -H "Content-Type: application/json" \\\n  -d '{"name":"Server","protocol":"sftp","host":"host","port":22,"username":"user","password":"pass"}'`}/>
+        <EP method="POST"   path="/connections/{id}/test" desc="Test a connection" code={`curl -X POST "${base}/connections/{id}/test" -H "Authorization: Bearer jwt"`}/>
+        <EP method="PUT"    path="/connections/{id}"     desc="Update a connection" code={`curl -X PUT "${base}/connections/{id}" -H "Authorization: Bearer jwt" -H "Content-Type: application/json" -d '{"name":"New Name"}'`}/>
+        <EP method="DELETE" path="/connections/{id}"     desc="Delete a connection" code={`curl -X DELETE "${base}/connections/{id}" -H "Authorization: Bearer jwt"`}/>
+      </>}
+      {tab==='keys'&&<>
+        <EP method="GET"    path="/api-keys"      desc="List all API keys" code={`curl "${base}/api-keys" -H "Authorization: Bearer jwt"`}/>
+        <EP method="POST"   path="/api-keys"      desc="Create an API key" code={`curl -X POST "${base}/api-keys" \\\n  -H "Authorization: Bearer jwt" \\\n  -H "Content-Type: application/json" \\\n  -d '{"name":"My App","expires_in_days":30}'`}/>
+        <EP method="DELETE" path="/api-keys/{id}" desc="Revoke an API key" code={`curl -X DELETE "${base}/api-keys/{id}" -H "Authorization: Bearer jwt"`}/>
+      </>}
     </Layout>
   );
 }
@@ -1208,62 +1381,82 @@ function Settings() {
   const [showToken, setShowToken] = useState(false);
   const token = localStorage.getItem('token');
   let tokenExpiry = null;
-  try { const p = JSON.parse(atob(token.split('.')[1])); tokenExpiry = new Date(p.exp*1000); } catch{}
+  try{ const p=JSON.parse(atob(token.split('.')[1])); tokenExpiry=new Date(p.exp*1000); }catch{}
 
   return (
     <Layout>
-      <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize:26, fontWeight:700, margin:0 }}>Settings</h1>
-          <p style={{ color:'var(--muted)', fontSize:13, marginTop:4 }}>Account info and access credentials</p>
+          <div className="page-title">Settings</div>
+          <div className="page-sub">Account information and access credentials</div>
         </div>
+      </div>
 
-        {/* Profile */}
-        <div className="bento-card">
-          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16, fontSize:15, fontWeight:600 }}><Icons.User/> Profile</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:16 }}>
-            {[['Name',user?.name],['Email',user?.email],['Member Since',formatDate(user?.created_at)]].map(([k,v])=>(
-              <div key={k}><div style={{ fontSize:12, color:'var(--muted)', marginBottom:2 }}>{k}</div><div style={{ fontWeight:500 }}>{v||'—'}</div></div>
-            ))}
-            <div>
-              <div style={{ fontSize:12, color:'var(--muted)', marginBottom:2 }}>User ID</div>
-              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                <code style={{ fontSize:11, background:'var(--secondary)', padding:'2px 8px', borderRadius:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:180 }}>{user?.id}</code>
-                <button className="btn btn-ghost btn-icon" style={{ padding:'2px 4px' }} onClick={()=>{ navigator.clipboard.writeText(user?.id); toast.success('Copied!'); }}><Icons.Copy/></button>
-              </div>
+      {/* Profile */}
+      <div className="card card-p" style={{marginBottom:14}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:18,fontSize:14,fontWeight:700}}>
+          <I.User/> Profile
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))',gap:20}}>
+          {[['Name',user?.name],['Email',user?.email],['Member Since',fmtDate(user?.created_at)]].map(([k,v])=>(
+            <div key={k}>
+              <div style={{fontSize:11,fontWeight:600,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:4}}>{k}</div>
+              <div style={{fontSize:14,fontWeight:500}}>{v||'—'}</div>
+            </div>
+          ))}
+          <div>
+            <div style={{fontSize:11,fontWeight:600,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.6px',marginBottom:4}}>User ID</div>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <code style={{fontSize:11,maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'block'}}>{user?.id}</code>
+              <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{ navigator.clipboard.writeText(user?.id); toast.success('Copied!'); }}><I.Copy/></button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* JWT Token */}
-        <div className="bento-card">
-          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, fontSize:15, fontWeight:600 }}><Icons.Shield/> JWT Token</div>
-          <p style={{ fontSize:12, color:'var(--muted)', marginBottom:16 }}>Use this in the <code style={{ background:'var(--secondary)',padding:'1px 5px',borderRadius:3 }}>Authorization: Bearer</code> header</p>
-          <div style={{ background:'rgba(255,255,255,0.04)', border:'1px solid var(--border)', borderRadius:8, padding:14, marginBottom:12 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-              <span style={{ fontSize:13, fontWeight:500 }}>Bearer Token</span>
-              <div style={{ display:'flex', gap:6 }}>
-                <button className="btn btn-ghost btn-icon" onClick={()=>setShowToken(!showToken)}>{showToken?<Icons.EyeOff/>:<Icons.Eye/>}</button>
-                <button className="btn btn-ghost btn-icon" onClick={()=>{ navigator.clipboard.writeText(token); toast.success('Token copied!'); }}><Icons.Copy/></button>
-              </div>
-            </div>
-            <div style={{ fontFamily:'monospace', fontSize:11, wordBreak:'break-all', color:'var(--muted)', maxHeight:80, overflow:'auto' }}>
-              {showToken ? token : '•'.repeat(60)}
+      {/* JWT */}
+      <div className="card card-p" style={{marginBottom:14}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6,fontSize:14,fontWeight:700}}>
+          <I.Shield/> JWT Token
+        </div>
+        <div style={{fontSize:12,color:'var(--muted)',marginBottom:16}}>Use in <code>Authorization: Bearer &lt;token&gt;</code> header for API access</div>
+        <div style={{background:'rgba(0,0,0,0.3)',border:'1px solid var(--border)',borderRadius:10,padding:14,marginBottom:14}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+            <span style={{fontSize:12,fontWeight:600,color:'var(--muted2)'}}>Bearer Token</span>
+            <div style={{display:'flex',gap:6}}>
+              <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>setShowToken(v=>!v)} title={showToken?'Hide':'Show'}>
+                {showToken?<I.EyeOff/>:<I.Eye/>}
+              </button>
+              <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{ navigator.clipboard.writeText(token); toast.success('Token copied!'); }} title="Copy">
+                <I.Copy/>
+              </button>
             </div>
           </div>
-          {tokenExpiry && <p style={{ fontSize:12, color:'var(--muted)', display:'flex', alignItems:'center', gap:6 }}><Icons.Clock/> Expires: {formatDate(tokenExpiry.toISOString())}</p>}
-          <hr style={{ border:'none', borderTop:'1px solid var(--border)', margin:'16px 0' }}/>
-          <div style={{ fontSize:13, fontWeight:500, marginBottom:8 }}>Usage Example</div>
-          <pre className="code-block">{`curl "${window.location.origin}/api/connections" \\\n  -H "Authorization: Bearer YOUR_TOKEN"`}</pre>
+          <div style={{fontFamily:'monospace',fontSize:11,wordBreak:'break-all',color:'var(--muted)',maxHeight:72,overflow:'auto',lineHeight:1.7}}>
+            {showToken ? token : '•'.repeat(72)}
+          </div>
         </div>
+        {tokenExpiry && (
+          <div style={{fontSize:12,color:'var(--muted)',display:'flex',alignItems:'center',gap:6,marginBottom:16}}>
+            <I.Clock/> Expires {fmtDate(tokenExpiry.toISOString())}
+          </div>
+        )}
+        <div className="sep"/>
+        <div style={{fontSize:12,fontWeight:600,marginBottom:8,color:'var(--muted2)'}}>Example Usage</div>
+        <pre className="code-block">{`curl "${window.location.origin}/api/connections" \\\n  -H "Authorization: Bearer YOUR_TOKEN"`}</pre>
+      </div>
 
-        {/* Auth methods */}
-        <div className="bento-card" style={{ background:'rgba(124,58,237,0.05)', borderColor:'rgba(124,58,237,0.2)', padding:14 }}>
-          <div style={{ fontSize:13, fontWeight:500, marginBottom:4 }}>Authentication Methods</div>
-          <div style={{ fontSize:12, color:'var(--muted)', marginBottom:10 }}>JWT tokens for dashboard sessions · API keys for programmatic access</div>
-          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-            <span className="badge badge-blue">JWT → Authorization header</span>
-            <span className="badge badge-purple">API Key → X-API-Key header</span>
+      {/* Auth reference */}
+      <div className="info-box">
+        <div className="info-box-icon"><I.Key/></div>
+        <div>
+          <div style={{fontSize:13,fontWeight:600,marginBottom:4}}>Authentication Methods</div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:6}}>
+            <span className="badge badge-blue">JWT → Authorization: Bearer</span>
+            <span className="badge badge-purple">API Key → X-API-Key</span>
+          </div>
+          <div style={{fontSize:12,color:'var(--muted)',marginTop:8,lineHeight:1.6}}>
+            Use JWT tokens for web dashboard sessions. Use API keys for scripts, CI/CD, and integrations.
           </div>
         </div>
       </div>
@@ -1271,49 +1464,34 @@ function Settings() {
   );
 }
 
-// ─── App ──────────────────────────────────────────────────
-function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
-  const { navigate } = useRouter();
-  useEffect(() => { if(!loading && !user) navigate('/login'); }, [user, loading]);
-  if (loading) return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center' }} className="grid-bg">
-      <Spinner size={36}/>
-    </div>
-  );
-  return user ? children : null;
-}
-function PublicRoute({ children }) {
-  const { user, loading } = useAuth();
-  const { navigate } = useRouter();
-  useEffect(() => { if(!loading && user) navigate('/'); }, [user, loading]);
-  if (loading) return null;
-  return !user ? children : null;
-}
-
+// ─── App Root ─────────────────────────────────────────────
+// IMPORTANT: AuthProvider wraps EVERYTHING at root level — never inside route components!
+// This prevents it from unmounting/remounting on navigation.
 function AppRoutes() {
   const { path } = useRouter();
   return (
-    <AuthProvider>
-      {(path === '/login') && <PublicRoute><Login/></PublicRoute>}
-      {(path === '/register') && <PublicRoute><Register/></PublicRoute>}
-      {(path === '/') && <ProtectedRoute><Dashboard/></ProtectedRoute>}
-      {(path === '/connections') && <ProtectedRoute><Connections/></ProtectedRoute>}
-      {(path === '/browser') && <ProtectedRoute><FileBrowser/></ProtectedRoute>}
-      {(path === '/api-keys') && <ProtectedRoute><APIKeys/></ProtectedRoute>}
-      {(path === '/docs') && <ProtectedRoute><APIDocs/></ProtectedRoute>}
-      {(path === '/settings') && <ProtectedRoute><Settings/></ProtectedRoute>}
+    <>
+      {path === '/login'       && <PublicRoute><Login/></PublicRoute>}
+      {path === '/register'    && <PublicRoute><Register/></PublicRoute>}
+      {path === '/'            && <ProtectedRoute><Dashboard/></ProtectedRoute>}
+      {path === '/connections' && <ProtectedRoute><Connections/></ProtectedRoute>}
+      {path === '/browser'     && <ProtectedRoute><FileBrowser/></ProtectedRoute>}
+      {path === '/api-keys'    && <ProtectedRoute><APIKeys/></ProtectedRoute>}
+      {path === '/docs'        && <ProtectedRoute><APIDocs/></ProtectedRoute>}
+      {path === '/settings'    && <ProtectedRoute><Settings/></ProtectedRoute>}
       {!['/login','/register','/','/connections','/browser','/api-keys','/docs','/settings'].includes(path) && (
         <ProtectedRoute><Dashboard/></ProtectedRoute>
       )}
-    </AuthProvider>
+    </>
   );
 }
 
 function App() {
   return (
     <Router>
-      <AppRoutes/>
+      <AuthProvider>
+        <AppRoutes/>
+      </AuthProvider>
     </Router>
   );
 }
@@ -1321,7 +1499,7 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 <style>
-/* Fix hover on file rows — can't do group-hover without JIT */
+/* Hover reveal for file action buttons */
 .file-row:hover .file-actions { opacity: 1 !important; }
 </style>
 </body>
@@ -1351,8 +1529,10 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
 DB_PATH       = os.environ.get("DB_PATH", str(ROOT_DIR / "relay_drive.db"))
-SECRET_KEY    = os.environ.get("SECRET_KEY", secrets.token_hex(32))
-ENCRYPTION_KEY= os.environ.get("ENCRYPTION_KEY", secrets.token_hex(32))
+import hashlib as _hl
+# Always ensure keys are exactly 64 hex chars (32 bytes) — safe even if user sets a short env var
+SECRET_KEY    = _hl.sha256(os.environ.get("SECRET_KEY",    secrets.token_hex(32)).encode()).hexdigest()
+ENCRYPTION_KEY= _hl.sha256(os.environ.get("ENCRYPTION_KEY",secrets.token_hex(32)).encode()).hexdigest()
 ALGORITHM     = "HS256"
 TOKEN_MINUTES = 60 * 24
 
