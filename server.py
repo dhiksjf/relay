@@ -285,9 +285,25 @@ code{background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:5px;font-fa
 <div id="toast-root"></div>
 <div id="root"></div>
 
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.5/babel.min.js"></script>
+<script>
+  // Fallback: show friendly error if React/Babel fail to load
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      if (!window.React || !window.Babel) {
+        document.getElementById('root').innerHTML =
+          '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#07070f;font-family:sans-serif">' +
+          '<div style="text-align:center;color:#f0f0ff;padding:40px">' +
+          '<div style="font-size:44px;margin-bottom:16px">⚡</div>' +
+          '<h2 style="font-size:20px;font-weight:700;margin-bottom:8px">Failed to load scripts</h2>' +
+          '<p style="color:#6b6b8a;font-size:14px">Could not reach the CDN. Check your network and try refreshing.</p>' +
+          '</div></div>';
+      }
+    }, 5000);
+  });
+</script>
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useCallback, useRef, createContext, useContext, useMemo } = React;
 
