@@ -490,7 +490,7 @@ function fileEmoji(type, name) {
            pdf:'📄',doc:'📄',docx:'📄',txt:'📝',md:'📝',
            js:'💻',ts:'💻',jsx:'💻',tsx:'💻',py:'🐍',java:'☕',rb:'💎',go:'🐹',rs:'🦀',
            html:'🌐',css:'🎨',json:'📋',xml:'📋',yml:'📋',yaml:'📋',
-           zip:'📦',tar:'📦',gz:'📦',rar:'📦',7z:'📦',
+           zip:'📦',tar:'📦',gz:'📦',rar:'📦','7z':'📦',
            mp3:'🎵',wav:'🎵',flac:'🎵',mp4:'🎬',avi:'🎬',mov:'🎬',mkv:'🎬',
            sh:'⚙️',bash:'⚙️',sql:'🗄️',db:'🗄️'};
   return m[e] || '📄';
