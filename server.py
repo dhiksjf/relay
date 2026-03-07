@@ -575,23 +575,26 @@ function Layout({ children }) {
 }
 
 // ─── Guards ───────────────────────────────────────────────
+const FullPageSpinner = () => (
+  <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg)'}}>
+    <Spinner size={32}/>
+  </div>
+);
+
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const { navigate }      = useRouter();
   useEffect(() => { if (!loading && !user) navigate('/login'); }, [user, loading]);
-  if (loading) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg)'}}>
-      <Spinner size={32}/>
-    </div>
-  );
-  if (!user) return null;
+  // Always show spinner during any transitional state — never return null (black screen)
+  if (loading || !user) return <FullPageSpinner/>;
   return children;
 }
 function PublicRoute({ children }) {
   const { user, loading } = useAuth();
   const { navigate }      = useRouter();
   useEffect(() => { if (!loading && user) navigate('/'); }, [user, loading]);
-  if (loading || user) return null;
+  // Always show spinner during any transitional state — never return null (black screen)
+  if (loading || user) return <FullPageSpinner/>;
   return children;
 }
 
@@ -717,7 +720,7 @@ function Dashboard() {
     create_api_key:'Created API key',revoke_api_key:'Revoked API key',
   };
   return (
-    <Layout>
+    <>
       <div className="page-header">
         <div>
           <div className="page-title">Dashboard</div>
@@ -776,7 +779,7 @@ function Dashboard() {
           </div>
         )}
       </div>
-    </Layout>
+    </>
   );
 }
 
@@ -819,7 +822,7 @@ function Connections() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="page-header">
         <div>
           <div className="page-title">Connections</div>
@@ -933,7 +936,7 @@ function Connections() {
           </div>
         </div>
       )}
-    </Layout>
+    </>
   );
 }
 
@@ -1018,7 +1021,7 @@ function FileBrowser() {
   const sorted = [...files].sort((a,b)=>{ if(a.type!==b.type) return a.type==='directory'?-1:1; return a.name.localeCompare(b.name); });
 
   return (
-    <Layout>
+    <>
       <div className="page-header">
         <div>
           <div className="page-title">File Browser</div>
@@ -1142,7 +1145,7 @@ function FileBrowser() {
           </div>
         </div>
       )}
-    </Layout>
+    </>
   );
 }
 
@@ -1176,7 +1179,7 @@ function APIKeys() {
   const isExpired = d => d && new Date(d)<new Date();
 
   return (
-    <Layout>
+    <>
       <div className="page-header">
         <div>
           <div className="page-title">API Keys</div>
@@ -1290,7 +1293,7 @@ function APIKeys() {
           </div>
         </div>
       )}
-    </Layout>
+    </>
   );
 }
 
@@ -1314,7 +1317,7 @@ function APIDocs() {
     </div>
   );
   return (
-    <Layout>
+    <>
       <div className="page-header">
         <div>
           <div className="page-title">API Documentation</div>
@@ -1371,7 +1374,7 @@ function APIDocs() {
         <EP method="POST"   path="/api-keys"      desc="Create an API key" code={`curl -X POST "${base}/api-keys" \\\n  -H "Authorization: Bearer jwt" \\\n  -H "Content-Type: application/json" \\\n  -d '{"name":"My App","expires_in_days":30}'`}/>
         <EP method="DELETE" path="/api-keys/{id}" desc="Revoke an API key" code={`curl -X DELETE "${base}/api-keys/{id}" -H "Authorization: Bearer jwt"`}/>
       </>}
-    </Layout>
+    </>
   );
 }
 
@@ -1384,7 +1387,7 @@ function Settings() {
   try{ const p=JSON.parse(atob(token.split('.')[1])); tokenExpiry=new Date(p.exp*1000); }catch{}
 
   return (
-    <Layout>
+    <>
       <div className="page-header">
         <div>
           <div className="page-title">Settings</div>
@@ -1460,28 +1463,39 @@ function Settings() {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }
 
 // ─── App Root ─────────────────────────────────────────────
 // IMPORTANT: AuthProvider wraps EVERYTHING at root level — never inside route components!
 // This prevents it from unmounting/remounting on navigation.
+
+// Protected page content without Layout wrapper — Layout lives in AppRoutes once
+function ProtectedPages() {
+  const { path } = useRouter();
+  // Map paths to page components (no <Layout> wrapper inside each)
+  const pages = {
+    '/':            <Dashboard/>,
+    '/connections': <Connections/>,
+    '/browser':     <FileBrowser/>,
+    '/api-keys':    <APIKeys/>,
+    '/docs':        <APIDocs/>,
+    '/settings':    <Settings/>,
+  };
+  const page = pages[path] ?? <Dashboard/>;
+  // Layout stays mounted across all protected routes — no remount flash
+  return <Layout>{page}</Layout>;
+}
+
 function AppRoutes() {
   const { path } = useRouter();
+  const isPublic = path === '/login' || path === '/register';
   return (
     <>
-      {path === '/login'       && <PublicRoute><Login/></PublicRoute>}
-      {path === '/register'    && <PublicRoute><Register/></PublicRoute>}
-      {path === '/'            && <ProtectedRoute><Dashboard/></ProtectedRoute>}
-      {path === '/connections' && <ProtectedRoute><Connections/></ProtectedRoute>}
-      {path === '/browser'     && <ProtectedRoute><FileBrowser/></ProtectedRoute>}
-      {path === '/api-keys'    && <ProtectedRoute><APIKeys/></ProtectedRoute>}
-      {path === '/docs'        && <ProtectedRoute><APIDocs/></ProtectedRoute>}
-      {path === '/settings'    && <ProtectedRoute><Settings/></ProtectedRoute>}
-      {!['/login','/register','/','/connections','/browser','/api-keys','/docs','/settings'].includes(path) && (
-        <ProtectedRoute><Dashboard/></ProtectedRoute>
-      )}
+      {path === '/login'    && <PublicRoute><Login/></PublicRoute>}
+      {path === '/register' && <PublicRoute><Register/></PublicRoute>}
+      {!isPublic            && <ProtectedRoute><ProtectedPages/></ProtectedRoute>}
     </>
   );
 }
