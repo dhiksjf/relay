@@ -808,7 +808,7 @@ function Connections() {
   const [saving,  setSaving]  = useState(false);
   const [form,    setForm]    = useState({name:'',protocol:'sftp',host:'',port:22,username:'',password:'',private_key:''});
 
-  const load = useCallback(()=>api.get('/connections').then(setConns).finally(()=>setLoading(false)),[]);
+  const load = useCallback(()=>api.get('/connections').then(d=>setConns(Array.isArray(d)?d:[])).finally(()=>setLoading(false)),[]);
   useEffect(()=>{ load(); },[]);
 
   const openNew  = ()=>{ setForm({name:'',protocol:'sftp',host:'',port:22,username:'',password:'',private_key:''}); setModal('new'); };
@@ -972,7 +972,7 @@ function FileBrowser() {
   const fileRef = useRef();
 
   useEffect(()=>{
-    api.get('/connections').then(cs=>{ setConns(cs); if(cs.length>0) setConn(cs[0]); }).finally(()=>setLoading(false));
+    api.get('/connections').then(cs=>{ const arr=Array.isArray(cs)?cs:[]; setConns(arr); if(arr.length>0) setConn(arr[0]); }).finally(()=>setLoading(false));
   },[]);
 
   const browse = useCallback(async(connId,p)=>{
@@ -1174,7 +1174,7 @@ function APIKeys() {
   const [form,   setForm]   = useState({name:'',expires_in_days:'30'});
   const [saving, setSaving] = useState(false);
 
-  const load = useCallback(()=>api.get('/api-keys').then(setKeys).finally(()=>setLoading(false)),[]);
+  const load = useCallback(()=>api.get('/api-keys').then(d=>setKeys(Array.isArray(d)?d:[])).finally(()=>setLoading(false)),[]);
   useEffect(()=>{ load(); },[]);
 
   const create = async e=>{
